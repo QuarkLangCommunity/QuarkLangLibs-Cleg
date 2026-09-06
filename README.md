@@ -41,6 +41,24 @@
 
 每类统一：`struct + impl ClegNode`（定制 render / getStyle / getX / getY / getW / getH / new）+ 状态字段 + 专有方法（`setChecked` / `setValue` / `currentIndex` / `addItem` / `setPlainText` / `display` …）+ `setStyle(jsonText)`。
 
+## 事件接口族（组件协议：用户直接用类实现）
+
+内置接口（dynamic，`qksignal_emit` 派发，有则调用、无则忽略）：
+
+`ClegClickable`（onClicked/onPressed/onReleased）· `ClegCheckable`（onToggled）· `ClegEditable`（onTextChanged/onReturnPressed）· `ClegValueable`（onValueChanged）· `ClegSelectable`（onCurrentIndexChanged）· `ClegItemable`（onItemClicked）· `ClegCellable`（onCellClicked）· `ClegCloseable`（onCloseRequested）· `ClegActionable`（onTriggered）
+
+```qk
+// 组件类扩展
+impl ClegButton ClegClickable { fn onClicked(self) void { ... } ... } ClegButton;
+// 自定义类实现（可多接口组合）
+impl MyWatcher ClegClickable { ... } MyWatcher;
+impl MyWatcher ClegSelectable { fn onCurrentIndexChanged(self, idx int) void { ... } } MyWatcher;
+
+clegsignal::emit(b, "clicked");                        // 无参
+clegsignal::emitArgs(w, "onCurrentIndexChanged", 42);  // 带参（int）
+clegsignal::emitText(w, "onTextChanged", "HELLO");     // 带参（String）
+```
+
 ## 布局 / 信号
 
 ```qk

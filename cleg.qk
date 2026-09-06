@@ -54,6 +54,13 @@ space {
     fn emit(node ClegNode, name String) void {
         qksignal_emit(node, name);
     }
+    // emit 带参：onTextChanged(newText) / onValueChanged(value) / onCurrentIndexChanged(index) 等
+    fn emitArgs(node ClegNode, name String, v int) void {
+        qksignal_emit(node, name, v);
+    }
+    fn emitText(node ClegNode, name String, v String) void {
+        qksignal_emit(node, name, v);
+    }
 } (clegsignal);
 
 
