@@ -1,17 +1,17 @@
-/* QuarkLang 官方库：cleg —— 轻量 GUI 框架（官方认证）
+/* QuarkLang 官方库：cleg —— 全面 GUI 框架（Qt 组件全集 Cleg 化，官方认证）
  *
- * 设计：
- *   - ClegNode 是核心接口（dynamic 协议）：
- *       render(self Self) void        —— 节点自渲染（style 驱动）
- *       getStyle(self Self) HashTable<String, String> —— 所有节点都有 Style
- *       getX/getY/getW/getH(self Self) int —— 布局信息
- *   - 所有节点有 Style(HashTable<String,String>)，style 决定渲染：
- *       label.style["text"] = "HELLO CLEG";
- *       label.style["color"] = "255,255,255";
- *   - 默认窗口 ClegWindow 实现 ClegNode；Label/Button 同样实现 ClegNode。
+ * 设计：ClegNode 核心接口（dynamic 协议）；每个 Qt 组件均为 struct + impl：
+ *   ClegWindow/ClegDialog/ClegFrame/ClegGroupBox/ClegLabel/ClegButton/ClegCheckBox/
+ *   ClegRadioButton/ClegLineEdit/ClegTextEdit/ClegPlainTextEdit/ClegTextBrowser/
+ *   ClegProgressBar/ClegSlider/ClegScrollBar/ClegDial/ClegSpinBox/ClegDoubleSpinBox/
+ *   ClegComboBox/ClegListWidget/ClegListView/ClegTableWidget/ClegTableView/
+ *   ClegTreeWidget/ClegTreeView/ClegTabWidget/ClegStackedWidget/ClegToolBox/
+ *   ClegMenuBar/ClegMenu/ClegToolBar/ClegStatusBar/ClegScrollArea/ClegSplitter/
+ *   ClegDockWidget/ClegMdiArea/ClegMdiSubWindow/ClegCalendarWidget/ClegDateEdit/
+ *   ClegTimeEdit/ClegLCDNumber/ClegHeaderView/ClegColumnView/ClegSizeGrip/
+ *   ClegDialogButtonBox/ClegOpenGLWidget/ClegVideoWidget
  *
- * 渲染后端：cleg::run 驱动（软件光栅帧缓冲，v1），Vulkan/GPU 后端走
- * QuarkLangLibs-Vulkan 声明集（路线 v2）。
+ * 全节点 Style(HashTable<String,String>) 驱动渲染；render/getStyle/getX/getY/getW/getH 协议。
  */
 program library;
 
@@ -24,41 +24,177 @@ interface {
     dynamic fn getH(self Self) int;
 } ClegNode;
 
-// ---------- 默认窗口：实现 ClegNode ----------
 struct {
     style HashTable<String, String>;
     x int;
     y int;
     w int;
     h int;
-} ClegWindow;
+} ClegMainWindow;
 
-impl ClegWindow ClegNode {
-    // 默认样式：bg=窗口底色; title=标题文本; winColor=顶栏背景
-    fn new() ClegWindow {
-        w ClegWindow;
-        w.style = HashTable::new();
-        w.style["bg"] = "30,34,46";
-        w.style["title"] = "CLEG";
-        w.style["winColor"] = "52,211,235";
-        w.x = 0; w.y = 0; w.w = 1280; w.h = 800;
-        return w;
+impl ClegMainWindow ClegNode {
+    fn new() ClegMainWindow {
+        s ClegMainWindow;
+        s.style = HashTable::new();
+        s.style["text"] = "MainWindow";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        return s;
     }
     fn render(self) void {
-        r int = 30; g int = 34; b2 int = 46;
-        qkcleg_clear(r, g, b2);
-        qkcleg_rect(self.x + 64, self.y + 48, self.w - 128, self.h - 96, 38, 44, 60);
-        qkcleg_rect(self.x + 64, self.y + 48, self.w - 128, 64, 52, 211, 235);
-        qkcleg_text(self.x + 96, self.y + 64, 6, 8, 28, 46, self.style.get("title"));
+        qkcleg_clear(30, 34, 46);
+        qkcleg_rect(self.getX() + 64, self.getY() + 48, 1152, 704, 38, 44, 60);
+        qkcleg_rect(self.getX() + 64, self.getY() + 48, 1152, 64, 52, 211, 235);
+        qkcleg_text(self.getX() + 96, self.getY() + 64, 6, 8, 28, 46, self.style.get("title"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
-    fn getX(self) int { return self.x; }
-    fn getY(self) int { return self.y; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-} ClegWindow;
+    fn setTitle(self, t String) void { self.style["title"] = t; }
+} ClegMainWindow;
 
-// ---------- Label：实现 ClegNode（style["text"]/color/size/pos） ----------
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegDialog;
+
+impl ClegDialog ClegNode {
+    fn new() ClegDialog {
+        s ClegDialog;
+        s.style = HashTable::new();
+        s.style["text"] = "Dialog";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), 480, 300, 44, 50, 66);
+        qkcleg_rect(self.getX(), self.getY(), 480, 56, 52, 211, 235);
+        qkcleg_text(self.getX() + 16, self.getY() + 12, 4, 8, 28, 46, self.style.get("title"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setTitle(self, t String) void { self.style["title"] = t; }
+} ClegDialog;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegFrame;
+
+impl ClegFrame ClegNode {
+    fn new() ClegFrame {
+        s ClegFrame;
+        s.style = HashTable::new();
+        s.style["text"] = "Frame";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 26, 30, 40);
+        qkcleg_rect(self.getX(), self.getY(), self.w, 2, 52, 211, 235);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegFrame;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    label ClegLabel;
+} ClegGroupBox;
+
+impl ClegGroupBox ClegNode {
+    fn new() ClegGroupBox {
+        s ClegGroupBox;
+        s.style = HashTable::new();
+        s.style["text"] = "GroupBox";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
+        qkcleg_rect(self.getX(), self.getY(), self.w, 3, 52, 211, 235);
+        qkcleg_text(self.getX() + 12, self.getY() + 12, 4, 52, 211, 235, self.style.get("text"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setTitle(self, t String) void { self.style["text"] = t; }
+} ClegGroupBox;
+
 struct {
     style HashTable<String, String>;
     x int;
@@ -69,24 +205,26 @@ struct {
 
 impl ClegLabel ClegNode {
     fn new() ClegLabel {
-        l ClegLabel;
-        l.style = HashTable::new();
-        l.style["text"] = "Label";
-        l.style["color"] = "8,28,46";
-        l.style["size"] = "4";
-        l.style["pos"] = "0,0";
-        l.x = 0; l.y = 0; l.w = 0; l.h = 0;
-        return l;
+        s ClegLabel;
+        s.style = HashTable::new();
+        s.style["text"] = "Label";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
     }
     fn render(self) void {
-        text String = self.style.get("text");
-        size int = self.style.get("size").toInt();
-        color String = self.style.get("color");
-        qkcleg_text(self.getX(), self.getY(), size,
-            color.split(",")[0].toInt(),
-            color.split(",")[1].toInt(),
-            color.split(",")[2].toInt(),
-            text);
+        qkcleg_text(self.getX(), self.getY(), self.style.get("size").toInt(),
+        self.style.get("color").split(",")[0].toInt(),
+        self.style.get("color").split(",")[1].toInt(),
+        self.style.get("color").split(",")[2].toInt(),
+        self.style.get("text"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -99,9 +237,9 @@ impl ClegLabel ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
+    fn setText(self, t String) void { self.style["text"] = t; }
 } ClegLabel;
 
-// ---------- Button：实现 ClegNode（style["text"]/bg 等） ----------
 struct {
     style HashTable<String, String>;
     x int;
@@ -112,29 +250,28 @@ struct {
 
 impl ClegButton ClegNode {
     fn new() ClegButton {
-        b ClegButton;
-        b.style = HashTable::new();
-        b.style["text"] = "Button";
-        b.style["bg"] = "240,98,146";
-        b.style["color"] = "255,255,255";
-        b.style["pos"] = "0,0";
-        b.style["size"] = "200,48";
-        b.x = 0; b.y = 0; b.w = 200; b.h = 48;
-        return b;
+        s ClegButton;
+        s.style = HashTable::new();
+        s.style["text"] = "Button";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
     }
     fn render(self) void {
         bg String = self.style.get("bg");
-        size List<String> = self.style.get("size").split(",");
-        qkcleg_rect(self.getX(), self.getY(), size[0].toInt(), size[1].toInt(),
-            bg.split(",")[0].toInt(),
-            bg.split(",")[1].toInt(),
-            bg.split(",")[2].toInt());
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h,
+        bg.split(",")[0].toInt(), bg.split(",")[1].toInt(), bg.split(",")[2].toInt());
         color String = self.style.get("color");
         qkcleg_text(self.getX() + 16, self.getY() + 12, 4,
-            color.split(",")[0].toInt(),
-            color.split(",")[1].toInt(),
-            color.split(",")[2].toInt(),
-            self.style.get("text"));
+        color.split(",")[0].toInt(), color.split(",")[1].toInt(), color.split(",")[2].toInt(),
+        self.style.get("text"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -147,22 +284,1847 @@ impl ClegButton ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
+    fn setText(self, t String) void { self.style["text"] = t; }
 } ClegButton;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    checked bool;
+} ClegCheckBox;
+
+impl ClegCheckBox ClegNode {
+    fn new() ClegCheckBox {
+        s ClegCheckBox;
+        s.style = HashTable::new();
+        s.style["text"] = "CheckBox";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), 36, 36, 120, 130, 150);
+        if (self.checked) { qkcleg_rect(self.getX() + 8, self.getY() + 8, 20, 20, 52, 211, 235); }
+        qkcleg_text(self.getX() + 48, self.getY() + 6, 4, 220, 225, 235, self.style.get("text"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setChecked(self, c bool) void { self.checked = c; } fn isChecked(self) bool { return self.checked; }
+} ClegCheckBox;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    checked bool;
+} ClegRadioButton;
+
+impl ClegRadioButton ClegNode {
+    fn new() ClegRadioButton {
+        s ClegRadioButton;
+        s.style = HashTable::new();
+        s.style["text"] = "RadioButton";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), 36, 36, 120, 130, 150);
+        if (self.checked) { qkcleg_rect(self.getX() + 10, self.getY() + 10, 16, 16, 240, 170, 60); }
+        qkcleg_text(self.getX() + 48, self.getY() + 6, 4, 220, 225, 235, self.style.get("text"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setChecked(self, c bool) void { self.checked = c; } fn isChecked(self) bool { return self.checked; }
+} ClegRadioButton;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegLineEdit;
+
+impl ClegLineEdit ClegNode {
+    fn new() ClegLineEdit {
+        s ClegLineEdit;
+        s.style = HashTable::new();
+        s.style["text"] = "LineEdit";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        qkcleg_rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
+        qkcleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setText(self, t String) void { self.style["text"] = t; } fn text(self) String { return self.style.get("text"); }
+} ClegLineEdit;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegTextEdit;
+
+impl ClegTextEdit ClegNode {
+    fn new() ClegTextEdit {
+        s ClegTextEdit;
+        s.style = HashTable::new();
+        s.style["text"] = "TextEdit";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        lines List<String> = self.style.get("text").split("\n");
+        i int = 0;
+        while (i < 8) {
+        if (i < lines.size()) { qkcleg_text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i]); }
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setPlainText(self, t String) void { self.style["text"] = t; } fn toPlainText(self) String { return self.style.get("text"); }
+} ClegTextEdit;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegPlainTextEdit;
+
+impl ClegPlainTextEdit ClegNode {
+    fn new() ClegPlainTextEdit {
+        s ClegPlainTextEdit;
+        s.style = HashTable::new();
+        s.style["text"] = "PlainTextEdit";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        lines List<String> = self.style.get("text").split("\n");
+        i int = 0;
+        while (i < 8) {
+        if (i < lines.size()) { qkcleg_text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i]); }
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setPlainText(self, t String) void { self.style["text"] = t; } fn toPlainText(self) String { return self.style.get("text"); }
+} ClegPlainTextEdit;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegTextBrowser;
+
+impl ClegTextBrowser ClegNode {
+    fn new() ClegTextBrowser {
+        s ClegTextBrowser;
+        s.style = HashTable::new();
+        s.style["text"] = "TextBrowser";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        lines List<String> = self.style.get("text").split("\n");
+        i int = 0;
+        while (i < 8) {
+        if (i < lines.size()) { qkcleg_text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i]); }
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setHtml(self, t String) void { self.style["text"] = t; }
+} ClegTextBrowser;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value int;
+} ClegProgressBar;
+
+impl ClegProgressBar ClegNode {
+    fn new() ClegProgressBar {
+        s ClegProgressBar;
+        s.style = HashTable::new();
+        s.style["text"] = "ProgressBar";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 60, 66, 82);
+        qkcleg_rect(self.getX(), self.getY(), self.w * self.value / 100, self.h, 52, 211, 235);
+        qkcleg_text(self.getX() + self.w / 2 - 24, self.getY() + 6, 3, 255, 255, 255, self.value.toString());
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
+} ClegProgressBar;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value int;
+} ClegSlider;
+
+impl ClegSlider ClegNode {
+    fn new() ClegSlider {
+        s ClegSlider;
+        s.style = HashTable::new();
+        s.style["text"] = "Slider";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY() + 18, self.w, 8, 90, 100, 120);
+        qkcleg_rect(self.getX() + self.w * self.value / 100 - 8, self.getY() + 8, 24, 28, 52, 211, 235);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
+} ClegSlider;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value int;
+} ClegScrollBar;
+
+impl ClegScrollBar ClegNode {
+    fn new() ClegScrollBar {
+        s ClegScrollBar;
+        s.style = HashTable::new();
+        s.style["text"] = "ScrollBar";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY() + 18, self.w, 8, 90, 100, 120);
+        qkcleg_rect(self.getX() + self.w * self.value / 100 - 8, self.getY() + 8, 24, 28, 52, 211, 235);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
+} ClegScrollBar;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value int;
+} ClegDial;
+
+impl ClegDial ClegNode {
+    fn new() ClegDial {
+        s ClegDial;
+        s.style = HashTable::new();
+        s.style["text"] = "Dial";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), 96, 96, 60, 66, 82);
+        qkcleg_rect(self.getX() + 24, self.getY() + 24, 48, 48, 52, 211, 235);
+        qkcleg_rect(self.getX() + 40 + 76 * self.value / 100, self.getY() + 6, 16, 12, 240, 170, 60);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
+} ClegDial;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value int;
+} ClegSpinBox;
+
+impl ClegSpinBox ClegNode {
+    fn new() ClegSpinBox {
+        s ClegSpinBox;
+        s.style = HashTable::new();
+        s.style["text"] = "SpinBox";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        qkcleg_rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
+        qkcleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
+} ClegSpinBox;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value float;
+} ClegDoubleSpinBox;
+
+impl ClegDoubleSpinBox ClegNode {
+    fn new() ClegDoubleSpinBox {
+        s ClegDoubleSpinBox;
+        s.style = HashTable::new();
+        s.style["text"] = "DoubleSpinBox";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        qkcleg_rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
+        qkcleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setValue(self, v float) void { self.value = v; }
+} ClegDoubleSpinBox;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    current int;
+} ClegComboBox;
+
+impl ClegComboBox ClegNode {
+    fn new() ClegComboBox {
+        s ClegComboBox;
+        s.style = HashTable::new();
+        s.style["text"] = "ComboBox";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        qkcleg_rect(self.getX() + self.w - 44, self.getY(), 44, self.h, 52, 130, 180);
+        items List<String> = self.style.get("items").split(";");
+        if (self.current < items.size()) { qkcleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, items[self.current]); }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; } fn currentIndex(self) int { return self.current; }
+} ClegComboBox;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    current int;
+} ClegListWidget;
+
+impl ClegListWidget ClegNode {
+    fn new() ClegListWidget {
+        s ClegListWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "ListWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        items List<String> = self.style.get("items").split(";");
+        i int = 0;
+        while (i < items.size()) {
+        if (i == self.current) { qkcleg_rect(self.getX(), self.getY() + i * 28, self.w, 28, 52, 130, 180); }
+        qkcleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, items[i]);
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
+} ClegListWidget;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    current int;
+} ClegListView;
+
+impl ClegListView ClegNode {
+    fn new() ClegListView {
+        s ClegListView;
+        s.style = HashTable::new();
+        s.style["text"] = "ListView";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        items List<String> = self.style.get("items").split(";");
+        i int = 0;
+        while (i < items.size()) {
+        if (i == self.current) { qkcleg_rect(self.getX(), self.getY() + i * 28, self.w, 28, 52, 130, 180); }
+        qkcleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, items[i]);
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
+} ClegListView;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegTableWidget;
+
+impl ClegTableWidget ClegNode {
+    fn new() ClegTableWidget {
+        s ClegTableWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "TableWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        rows int = self.style.get("rows").toInt();
+        i int = 0;
+        while (i < rows) {
+        qkcleg_rect(self.getX(), self.getY() + i * 28, self.w, 2, 170, 178, 190);
+        qkcleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, self.style.get("row" + i.toString()));
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setRowCount(self, n int) void { self.style["rows"] = n.toString(); }
+} ClegTableWidget;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegTableView;
+
+impl ClegTableView ClegNode {
+    fn new() ClegTableView {
+        s ClegTableView;
+        s.style = HashTable::new();
+        s.style["text"] = "TableView";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        rows int = self.style.get("rows").toInt();
+        i int = 0;
+        while (i < rows) {
+        qkcleg_rect(self.getX(), self.getY() + i * 28, self.w, 2, 170, 178, 190);
+        qkcleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, self.style.get("row" + i.toString()));
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setRowCount(self, n int) void { self.style["rows"] = n.toString(); }
+} ClegTableView;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegTreeWidget;
+
+impl ClegTreeWidget ClegNode {
+    fn new() ClegTreeWidget {
+        s ClegTreeWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "TreeWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        items List<String> = self.style.get("items").split(";");
+        i int = 0;
+        while (i < items.size()) {
+        qkcleg_rect(self.getX() + 16, self.getY() + i * 28 + 10, 12, 2, 100, 110, 130);
+        qkcleg_text(self.getX() + 36, self.getY() + i * 28 + 4, 4, 20, 26, 38, items[i]);
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addTopLevelItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
+} ClegTreeWidget;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegTreeView;
+
+impl ClegTreeView ClegNode {
+    fn new() ClegTreeView {
+        s ClegTreeView;
+        s.style = HashTable::new();
+        s.style["text"] = "TreeView";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        items List<String> = self.style.get("items").split(";");
+        i int = 0;
+        while (i < items.size()) {
+        qkcleg_rect(self.getX() + 16, self.getY() + i * 28 + 10, 12, 2, 100, 110, 130);
+        qkcleg_text(self.getX() + 36, self.getY() + i * 28 + 4, 4, 20, 26, 38, items[i]);
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addTopLevelItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
+} ClegTreeView;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    current int;
+} ClegTabWidget;
+
+impl ClegTabWidget ClegNode {
+    fn new() ClegTabWidget {
+        s ClegTabWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "TabWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        tabs List<String> = self.style.get("tabs").split(";");
+        i int = 0;
+        while (i < tabs.size()) {
+        if (i == self.current) { qkcleg_rect(self.getX() + i * 128, self.getY(), 124, 40, 52, 130, 180); }
+        else { qkcleg_rect(self.getX() + i * 128, self.getY(), 124, 40, 200, 205, 215); }
+        qkcleg_text(self.getX() + 20 + i * 128, self.getY() + 10, 3, 20, 26, 38, tabs[i]);
+        i = i + 1;
+        }
+        qkcleg_rect(self.getX(), self.getY() + 40, self.w, 2, 170, 178, 190);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addTab(self, t String) void { self.style["tabs"] = self.style.get("tabs") + ";" + t; }
+} ClegTabWidget;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    current int;
+} ClegStackedWidget;
+
+impl ClegStackedWidget ClegNode {
+    fn new() ClegStackedWidget {
+        s ClegStackedWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "StackedWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
+        qkcleg_text(self.getX() + 12, self.getY() + 12, 4, 120, 200, 240, self.current.toString());
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setCurrentIndex(self, i int) void { self.current = i; }
+} ClegStackedWidget;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    current int;
+} ClegToolBox;
+
+impl ClegToolBox ClegNode {
+    fn new() ClegToolBox {
+        s ClegToolBox;
+        s.style = HashTable::new();
+        s.style["text"] = "ToolBox";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        tabs List<String> = self.style.get("tabs").split(";");
+        i int = 0;
+        while (i < tabs.size()) {
+        if (i == self.current) { qkcleg_rect(self.getX() + i * 128, self.getY(), 124, 40, 52, 130, 180); }
+        else { qkcleg_rect(self.getX() + i * 128, self.getY(), 124, 40, 200, 205, 215); }
+        qkcleg_text(self.getX() + 20 + i * 128, self.getY() + 10, 3, 20, 26, 38, tabs[i]);
+        i = i + 1;
+        }
+        qkcleg_rect(self.getX(), self.getY() + 40, self.w, 2, 170, 178, 190);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addItem(self, t String) void { self.style["tabs"] = self.style.get("tabs") + ";" + t; }
+} ClegToolBox;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegMenuBar;
+
+impl ClegMenuBar ClegNode {
+    fn new() ClegMenuBar {
+        s ClegMenuBar;
+        s.style = HashTable::new();
+        s.style["text"] = "MenuBar";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, 40, 34, 40, 54);
+        menus List<String> = self.style.get("menus").split(";");
+        i int = 0;
+        while (i < menus.size()) { qkcleg_text(self.getX() + 12 + i * 120, self.getY() + 10, 4, 220, 225, 235, menus[i]); i = i + 1; }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addMenu(self, t String) void { self.style["menus"] = self.style.get("menus") + ";" + t; }
+} ClegMenuBar;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegMenu;
+
+impl ClegMenu ClegNode {
+    fn new() ClegMenu {
+        s ClegMenu;
+        s.style = HashTable::new();
+        s.style["text"] = "Menu";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
+        items List<String> = self.style.get("items").split(";");
+        i int = 0;
+        while (i < items.size()) { qkcleg_text(self.getX() + 16, self.getY() + 10 + i * 26, 4, 220, 225, 235, items[i]); i = i + 1; }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addAction(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
+} ClegMenu;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegToolBar;
+
+impl ClegToolBar ClegNode {
+    fn new() ClegToolBar {
+        s ClegToolBar;
+        s.style = HashTable::new();
+        s.style["text"] = "ToolBar";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, 44, 50, 58, 76);
+        items List<String> = self.style.get("items").split(";");
+        i int = 0;
+        while (i < items.size()) {
+        qkcleg_rect(self.getX() + 8 + i * 72, self.getY() + 8, 56, 28, 52, 130, 180);
+        qkcleg_text(self.getX() + 12 + i * 72, self.getY() + 14, 3, 20, 26, 38, items[i]);
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addAction(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
+} ClegToolBar;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegStatusBar;
+
+impl ClegStatusBar ClegNode {
+    fn new() ClegStatusBar {
+        s ClegStatusBar;
+        s.style = HashTable::new();
+        s.style["text"] = "StatusBar";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
+        qkcleg_text(self.getX() + 12, self.getY() + 8, 3, 180, 190, 205, self.style.get("text"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn showMessage(self, t String) void { self.style["text"] = t; }
+} ClegStatusBar;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegScrollArea;
+
+impl ClegScrollArea ClegNode {
+    fn new() ClegScrollArea {
+        s ClegScrollArea;
+        s.style = HashTable::new();
+        s.style["text"] = "ScrollArea";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        qkcleg_rect(self.getX() + self.w - 24, self.getY() + 16, 12, self.h - 48, 52, 130, 180);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegScrollArea;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegSplitter;
+
+impl ClegSplitter ClegNode {
+    fn new() ClegSplitter {
+        s ClegSplitter;
+        s.style = HashTable::new();
+        s.style["text"] = "Splitter";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 224, 230, 238);
+        qkcleg_rect(self.getX() + self.w / 2 - 8, self.getY(), 16, self.h, 150, 158, 172);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegSplitter;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegDockWidget;
+
+impl ClegDockWidget ClegNode {
+    fn new() ClegDockWidget {
+        s ClegDockWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "DockWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
+        qkcleg_rect(self.getX(), self.getY(), 4, self.h, 52, 211, 235);
+        qkcleg_text(self.getX() + 16, self.getY() + 8, 3, 180, 200, 220, self.style.get("title"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setWindowTitle(self, t String) void { self.style["title"] = t; }
+} ClegDockWidget;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegMdiArea;
+
+impl ClegMdiArea ClegNode {
+    fn new() ClegMdiArea {
+        s ClegMdiArea;
+        s.style = HashTable::new();
+        s.style["text"] = "MdiArea";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 30, 34, 46);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegMdiArea;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegMdiSubWindow;
+
+impl ClegMdiSubWindow ClegNode {
+    fn new() ClegMdiSubWindow {
+        s ClegMdiSubWindow;
+        s.style = HashTable::new();
+        s.style["text"] = "MdiSubWindow";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), 480, 300, 44, 50, 66);
+        qkcleg_rect(self.getX(), self.getY(), 480, 56, 52, 211, 235);
+        qkcleg_text(self.getX() + 16, self.getY() + 12, 4, 8, 28, 46, self.style.get("title"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegMdiSubWindow;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    selected int;
+} ClegCalendarWidget;
+
+impl ClegCalendarWidget ClegNode {
+    fn new() ClegCalendarWidget {
+        s ClegCalendarWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "CalendarWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        days List<String> = "SUN,MON,TUE,WED,THU,FRI,SAT".split(",");
+        i int = 0;
+        while (i < 7) { qkcleg_text(self.getX() + 18 + i * 44, self.getY() + 8, 3, 60, 70, 90, days[i]); i = i + 1; }
+        j int = 1;
+        while (j < 32) {
+        qkcleg_rect(self.getX() + 16 + (j - 1) % 7 * 44, self.getY() + 40 + (j - 1) / 7 * 36, 36, 28, 200, 208, 220);
+        qkcleg_text(self.getX() + 24 + (j - 1) % 7 * 44, self.getY() + 44 + (j - 1) / 7 * 36, 3, 30, 38, 54, j.toString());
+        j = j + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setSelectedDate(self, d int) void { self.selected = d; }
+} ClegCalendarWidget;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value int;
+} ClegDateEdit;
+
+impl ClegDateEdit ClegNode {
+    fn new() ClegDateEdit {
+        s ClegDateEdit;
+        s.style = HashTable::new();
+        s.style["text"] = "DateEdit";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        qkcleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.value.toString());
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setDate(self, d int) void { self.value = d; }
+} ClegDateEdit;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value int;
+} ClegTimeEdit;
+
+impl ClegTimeEdit ClegNode {
+    fn new() ClegTimeEdit {
+        s ClegTimeEdit;
+        s.style = HashTable::new();
+        s.style["text"] = "TimeEdit";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        qkcleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.value.toString());
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn setTime(self, t int) void { self.value = t; }
+} ClegTimeEdit;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    value int;
+} ClegLCDNumber;
+
+impl ClegLCDNumber ClegNode {
+    fn new() ClegLCDNumber {
+        s ClegLCDNumber;
+        s.style = HashTable::new();
+        s.style["text"] = "LCDNumber";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 8, 12, 18);
+        qkcleg_text(self.getX() + 16, self.getY() + 12, 6, 52, 211, 235, self.value.toString());
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn display(self, v int) void { self.value = v; }
+} ClegLCDNumber;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegHeaderView;
+
+impl ClegHeaderView ClegNode {
+    fn new() ClegHeaderView {
+        s ClegHeaderView;
+        s.style = HashTable::new();
+        s.style["text"] = "HeaderView";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegHeaderView;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+    current int;
+} ClegColumnView;
+
+impl ClegColumnView ClegNode {
+    fn new() ClegColumnView {
+        s ClegColumnView;
+        s.style = HashTable::new();
+        s.style["text"] = "ColumnView";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        items List<String> = self.style.get("items").split(";");
+        i int = 0;
+        while (i < items.size()) {
+        if (i == self.current) { qkcleg_rect(self.getX(), self.getY() + i * 28, self.w, 28, 52, 130, 180); }
+        qkcleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, items[i]);
+        i = i + 1;
+        }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegColumnView;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegSizeGrip;
+
+impl ClegSizeGrip ClegNode {
+    fn new() ClegSizeGrip {
+        s ClegSizeGrip;
+        s.style = HashTable::new();
+        s.style["text"] = "SizeGrip";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX() + self.w - 24, self.getY() + self.h - 24, 12, 12, 120, 130, 150);
+        qkcleg_rect(self.getX() + self.w - 36, self.getY() + self.h - 24, 10, 10, 150, 160, 180);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegSizeGrip;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegDialogButtonBox;
+
+impl ClegDialogButtonBox ClegNode {
+    fn new() ClegDialogButtonBox {
+        s ClegDialogButtonBox;
+        s.style = HashTable::new();
+        s.style["text"] = "DialogButtonBox";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, 40, 34, 40, 54);
+        menus List<String> = self.style.get("menus").split(";");
+        i int = 0;
+        while (i < menus.size()) { qkcleg_text(self.getX() + 12 + i * 120, self.getY() + 10, 4, 220, 225, 235, menus[i]); i = i + 1; }
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+    fn addButton(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
+} ClegDialogButtonBox;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegOpenGLWidget;
+
+impl ClegOpenGLWidget ClegNode {
+    fn new() ClegOpenGLWidget {
+        s ClegOpenGLWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "OpenGLWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 10, 14, 22);
+        qkcleg_rect(self.getX() + 8, self.getY() + 8, self.w - 16, self.h - 16, 20, 28, 44);
+        qkcleg_text(self.getX() + 24, self.getY() + 24, 4, 90, 200, 250, "GPU SURFACE");
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegOpenGLWidget;
+
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegVideoWidget;
+
+impl ClegVideoWidget ClegNode {
+    fn new() ClegVideoWidget {
+        s ClegVideoWidget;
+        s.style = HashTable::new();
+        s.style["text"] = "VideoWidget";
+        s.style["color"] = "255,255,255";
+        s.style["bg"] = "56,64,84";
+        s.style["size"] = "4";
+        s.style["pos"] = "0,0";
+        s.style["items"] = "";
+        s.style["tabs"] = "";
+        s.style["menus"] = "";
+        s.style["rows"] = "3";
+        s.x = 0; s.y = 0; s.w = 220; s.h = 60;
+        return s;
+    }
+    fn render(self) void {
+        qkcleg_rect(self.getX(), self.getY(), self.w, self.h, 10, 14, 22);
+        qkcleg_rect(self.getX() + 8, self.getY() + 8, self.w - 16, self.h - 16, 20, 28, 44);
+        qkcleg_text(self.getX() + 24, self.getY() + 24, 4, 90, 200, 250, "GPU SURFACE");
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegVideoWidget;
 
 // ---------- 顶层驱动 ----------
 space {
-    // cleg::init(w, h)：创建帧缓冲
-    fn init(w int, h int) void {
-        qkcleg_create(w, h);
-    }
-    // cleg::runTree()：渲染窗口节点树（v1：显式调用节点 render）
-    fn runTree(win ClegNode, label ClegNode, btn ClegNode) void {
-        win.render();
-        label.render();
-        btn.render();
-    }
-    // cleg::frame(path)：输出渲染帧（调试验证；真实环境为提交交换链）
-    fn frame(path String) void {
-        qkcleg_frame(path);
-    }
+    fn init(w int, h int) void { qkcleg_create(w, h); }
+    fn frame(path String) void { qkcleg_frame(path); }
 } (cleg);

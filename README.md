@@ -41,13 +41,18 @@ fn main(io IOStream) {
 }
 ```
 
-## 组件
+## 组件全集（Qt 清单 → Cleg 类，48 类全部实现 ClegNode）
 
-| 节点 | 实现 ClegNode | 关键 style 键 |
-|---|---|---|
-| `ClegWindow` | ✓（默认窗口） | `bg` / `title` / `winColor` |
-| `ClegLabel` | ✓ | `text` / `color` / `size` / `pos` |
-| `ClegButton` | ✓ | `text` / `bg` / `color` / `pos` / `size` |
+- **窗口/容器**：ClegMainWindow（默认窗口）、ClegDialog、ClegFrame、ClegGroupBox、ClegScrollArea、ClegSplitter、ClegDockWidget、ClegMdiArea、ClegMdiSubWindow、ClegStackedWidget、ClegTabWidget、ClegToolBox
+- **文本输入/显示**：ClegLabel、ClegLineEdit、ClegTextEdit、ClegPlainTextEdit、ClegTextBrowser
+- **按钮类**：ClegButton、ClegCheckBox、ClegRadioButton、ClegDialogButtonBox
+- **数值/状态**：ClegProgressBar、ClegSlider、ClegScrollBar、ClegDial、ClegSpinBox、ClegDoubleSpinBox、ClegLCDNumber
+- **数据视图**：ClegComboBox、ClegListWidget、ClegListView、ClegTableWidget、ClegTableView、ClegTreeWidget、ClegTreeView、ClegColumnView、ClegHeaderView
+- **菜单/工具栏**：ClegMenuBar、ClegMenu、ClegToolBar、ClegStatusBar
+- **日历/时间**：ClegCalendarWidget、ClegDateEdit、ClegTimeEdit
+- **其它**：ClegSizeGrip、ClegOpenGLWidget、ClegVideoWidget
+
+每类：`struct + impl ClegNode`（定制 render / getStyle / getX / getY / getW / getH / new）+ 状态字段 + 专有方法（`setChecked` / `setValue` / `currentIndex` / `addItem` / `setPlainText` / `display` …）。
 
 `cleg::` 空间：`init(w,h)` / `runTree(win, label, btn)` / `frame(path)`。
 
