@@ -66,8 +66,8 @@ impl ClegMainWindow ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setTitle(self, t String) void { self.style["title"] = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegMainWindow;
 
@@ -112,8 +112,8 @@ impl ClegDialog ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setTitle(self, t String) void { self.style["title"] = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegDialog;
 
@@ -156,8 +156,8 @@ impl ClegFrame ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegFrame;
 
@@ -203,8 +203,8 @@ impl ClegGroupBox ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setTitle(self, t String) void { self.style["text"] = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegGroupBox;
 
@@ -251,8 +251,8 @@ impl ClegLabel ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setText(self, t String) void { self.style["text"] = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegLabel;
 
@@ -301,8 +301,8 @@ impl ClegButton ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setText(self, t String) void { self.style["text"] = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegButton;
 
@@ -348,8 +348,8 @@ impl ClegCheckBox ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setChecked(self, c bool) void { self.checked = c; } fn isChecked(self) bool { return self.checked; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegCheckBox;
 
@@ -395,8 +395,8 @@ impl ClegRadioButton ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setChecked(self, c bool) void { self.checked = c; } fn isChecked(self) bool { return self.checked; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegRadioButton;
 
@@ -441,8 +441,8 @@ impl ClegLineEdit ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setText(self, t String) void { self.style["text"] = t; } fn text(self) String { return self.style.get("text"); }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegLineEdit;
 
@@ -491,8 +491,8 @@ impl ClegTextEdit ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setPlainText(self, t String) void { self.style["text"] = t; } fn toPlainText(self) String { return self.style.get("text"); }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegTextEdit;
 
@@ -541,8 +541,8 @@ impl ClegPlainTextEdit ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setPlainText(self, t String) void { self.style["text"] = t; } fn toPlainText(self) String { return self.style.get("text"); }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegPlainTextEdit;
 
@@ -591,8 +591,8 @@ impl ClegTextBrowser ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setHtml(self, t String) void { self.style["text"] = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegTextBrowser;
 
@@ -638,8 +638,8 @@ impl ClegProgressBar ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegProgressBar;
 
@@ -684,8 +684,8 @@ impl ClegSlider ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegSlider;
 
@@ -730,8 +730,8 @@ impl ClegScrollBar ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegScrollBar;
 
@@ -777,8 +777,8 @@ impl ClegDial ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegDial;
 
@@ -824,8 +824,8 @@ impl ClegSpinBox ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setValue(self, v int) void { self.value = v; } fn value(self) int { return self.value; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegSpinBox;
 
@@ -871,8 +871,8 @@ impl ClegDoubleSpinBox ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setValue(self, v float) void { self.value = v; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegDoubleSpinBox;
 
@@ -919,8 +919,8 @@ impl ClegComboBox ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; } fn currentIndex(self) int { return self.current; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegComboBox;
 
@@ -971,8 +971,8 @@ impl ClegListWidget ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegListWidget;
 
@@ -1023,8 +1023,8 @@ impl ClegListView ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegListView;
 
@@ -1074,8 +1074,8 @@ impl ClegTableWidget ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setRowCount(self, n int) void { self.style["rows"] = n.toString(); }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegTableWidget;
 
@@ -1125,8 +1125,8 @@ impl ClegTableView ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setRowCount(self, n int) void { self.style["rows"] = n.toString(); }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegTableView;
 
@@ -1176,8 +1176,8 @@ impl ClegTreeWidget ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addTopLevelItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegTreeWidget;
 
@@ -1227,8 +1227,8 @@ impl ClegTreeView ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addTopLevelItem(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegTreeView;
 
@@ -1281,8 +1281,8 @@ impl ClegTabWidget ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addTab(self, t String) void { self.style["tabs"] = self.style.get("tabs") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegTabWidget;
 
@@ -1327,8 +1327,8 @@ impl ClegStackedWidget ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setCurrentIndex(self, i int) void { self.current = i; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegStackedWidget;
 
@@ -1381,8 +1381,8 @@ impl ClegToolBox ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addItem(self, t String) void { self.style["tabs"] = self.style.get("tabs") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegToolBox;
 
@@ -1428,8 +1428,8 @@ impl ClegMenuBar ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addMenu(self, t String) void { self.style["menus"] = self.style.get("menus") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegMenuBar;
 
@@ -1475,8 +1475,8 @@ impl ClegMenu ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addAction(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegMenu;
 
@@ -1526,8 +1526,8 @@ impl ClegToolBar ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addAction(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegToolBar;
 
@@ -1571,8 +1571,8 @@ impl ClegStatusBar ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn showMessage(self, t String) void { self.style["text"] = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegStatusBar;
 
@@ -1615,8 +1615,8 @@ impl ClegScrollArea ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegScrollArea;
 
@@ -1659,8 +1659,8 @@ impl ClegSplitter ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegSplitter;
 
@@ -1705,8 +1705,8 @@ impl ClegDockWidget ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setWindowTitle(self, t String) void { self.style["title"] = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegDockWidget;
 
@@ -1748,8 +1748,8 @@ impl ClegMdiArea ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegMdiArea;
 
@@ -1793,8 +1793,8 @@ impl ClegMdiSubWindow ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegMdiSubWindow;
 
@@ -1847,8 +1847,8 @@ impl ClegCalendarWidget ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setSelectedDate(self, d int) void { self.selected = d; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegCalendarWidget;
 
@@ -1893,8 +1893,8 @@ impl ClegDateEdit ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setDate(self, d int) void { self.value = d; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegDateEdit;
 
@@ -1939,8 +1939,8 @@ impl ClegTimeEdit ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn setTime(self, t int) void { self.value = t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegTimeEdit;
 
@@ -1985,8 +1985,8 @@ impl ClegLCDNumber ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn display(self, v int) void { self.value = v; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegLCDNumber;
 
@@ -2028,8 +2028,8 @@ impl ClegHeaderView ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegHeaderView;
 
@@ -2079,8 +2079,8 @@ impl ClegColumnView ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegColumnView;
 
@@ -2123,8 +2123,8 @@ impl ClegSizeGrip ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegSizeGrip;
 
@@ -2170,8 +2170,8 @@ impl ClegDialogButtonBox ClegNode {
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
     fn addButton(self, t String) void { self.style["items"] = self.style.get("items") + ";" + t; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegDialogButtonBox;
 
@@ -2215,8 +2215,8 @@ impl ClegOpenGLWidget ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegOpenGLWidget;
 
@@ -2260,8 +2260,8 @@ impl ClegVideoWidget ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setStyle(self, file String) void {
-        qkcleg_style_load(self.style, file);
+    fn setStyle(self, jsonText String) void {
+        qkcleg_style_parse(self.style, jsonText);
     }
 } ClegVideoWidget;
 
