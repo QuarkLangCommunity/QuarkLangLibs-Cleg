@@ -43,7 +43,7 @@
 
 ## 事件接口族（组件协议：用户直接用类实现）
 
-内置接口（dynamic，`qksignal_emit` 派发，有则调用、无则忽略）：
+内置接口（dynamic，`qksignal_emit` 派发，有则调用、无则忽略）。**事件接口族是"可选实现"**：实现多少方法随意（`impl ClegButton ClegClickable { fn onClicked... }` 只写 onClicked 即可，缺 onPressed/onReleased 不报错）；`emit` 只触发已实现的方法。
 
 `ClegClickable`（onClicked/onPressed/onReleased）· `ClegCheckable`（onToggled）· `ClegEditable`（onTextChanged/onReturnPressed）· `ClegValueable`（onValueChanged）· `ClegSelectable`（onCurrentIndexChanged）· `ClegItemable`（onItemClicked）· `ClegCellable`（onCellClicked）· `ClegCloseable`（onCloseRequested）· `ClegActionable`（onTriggered）
 
@@ -54,7 +54,7 @@ impl ClegButton ClegClickable { fn onClicked(self) void { ... } ... } ClegButton
 impl MyWatcher ClegClickable { ... } MyWatcher;
 impl MyWatcher ClegSelectable { fn onCurrentIndexChanged(self, idx int) void { ... } } MyWatcher;
 
-clegsignal::emit(b, "clicked");                        // 无参
+clegsignal::emit(b, "clicked");                        // 无参——短名自动映射 onClicked（全名也可：emit(b,"onClicked")）
 clegsignal::emitArgs(w, "onCurrentIndexChanged", 42);  // 带参（int）
 clegsignal::emitText(w, "onTextChanged", "HELLO");     // 带参（String）
 ```
