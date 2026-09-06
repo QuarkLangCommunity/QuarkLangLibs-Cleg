@@ -60,7 +60,7 @@ space {
 
 interface {
     dynamic fn render(self Self) void;
-    dynamic fn setStyle(self Self, file String) void;
+    dynamic fn setStyle(self Self, jsonText String) void;
     dynamic fn getStyle(self Self) HashTable<String, String>;
     dynamic fn getX(self Self) int;
     dynamic fn getY(self Self) int;
