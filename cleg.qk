@@ -41,6 +41,7 @@ impl ClegMainWindow ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -87,6 +88,7 @@ impl ClegDialog ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -133,6 +135,7 @@ impl ClegFrame ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -178,6 +181,7 @@ impl ClegGroupBox ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -224,6 +228,7 @@ impl ClegLabel ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -233,11 +238,11 @@ impl ClegLabel ClegNode {
         return s;
     }
     fn render(self) void {
-        qkcleg_text(self.getX(), self.getY(), self.style.get("size").toInt(),
+        qkcleg_text_ex(self.getX(), self.getY(), self.style.get("size").toInt(),
         self.style.get("color").split(",")[0].toInt(),
         self.style.get("color").split(",")[1].toInt(),
         self.style.get("color").split(",")[2].toInt(),
-        self.style.get("text"));
+        self.style.get("text"), self.style.get("font"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -272,6 +277,7 @@ impl ClegButton ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -285,9 +291,9 @@ impl ClegButton ClegNode {
         qkcleg_rect(self.getX(), self.getY(), self.w, self.h,
         bg.split(",")[0].toInt(), bg.split(",")[1].toInt(), bg.split(",")[2].toInt());
         color String = self.style.get("color");
-        qkcleg_text(self.getX() + 16, self.getY() + 12, 4,
+        qkcleg_text_ex(self.getX() + 16, self.getY() + 12, 4,
         color.split(",")[0].toInt(), color.split(",")[1].toInt(), color.split(",")[2].toInt(),
-        self.style.get("text"));
+        self.style.get("text"), self.style.get("font"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -323,6 +329,7 @@ impl ClegCheckBox ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -370,6 +377,7 @@ impl ClegRadioButton ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -416,6 +424,7 @@ impl ClegLineEdit ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -462,6 +471,7 @@ impl ClegTextEdit ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -512,6 +522,7 @@ impl ClegPlainTextEdit ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -562,6 +573,7 @@ impl ClegTextBrowser ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -613,6 +625,7 @@ impl ClegProgressBar ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -660,6 +673,7 @@ impl ClegSlider ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -706,6 +720,7 @@ impl ClegScrollBar ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -752,6 +767,7 @@ impl ClegDial ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -799,6 +815,7 @@ impl ClegSpinBox ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -846,6 +863,7 @@ impl ClegDoubleSpinBox ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -893,6 +911,7 @@ impl ClegComboBox ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -941,6 +960,7 @@ impl ClegListWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -993,6 +1013,7 @@ impl ClegListView ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1044,6 +1065,7 @@ impl ClegTableWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1095,6 +1117,7 @@ impl ClegTableView ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1146,6 +1169,7 @@ impl ClegTreeWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1197,6 +1221,7 @@ impl ClegTreeView ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1249,6 +1274,7 @@ impl ClegTabWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1303,6 +1329,7 @@ impl ClegStackedWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1349,6 +1376,7 @@ impl ClegToolBox ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1402,6 +1430,7 @@ impl ClegMenuBar ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1449,6 +1478,7 @@ impl ClegMenu ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1496,6 +1526,7 @@ impl ClegToolBar ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1547,6 +1578,7 @@ impl ClegStatusBar ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1592,6 +1624,7 @@ impl ClegScrollArea ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1636,6 +1669,7 @@ impl ClegSplitter ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1680,6 +1714,7 @@ impl ClegDockWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1726,6 +1761,7 @@ impl ClegMdiArea ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1769,6 +1805,7 @@ impl ClegMdiSubWindow ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1815,6 +1852,7 @@ impl ClegCalendarWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1869,6 +1907,7 @@ impl ClegDateEdit ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1915,6 +1954,7 @@ impl ClegTimeEdit ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -1961,6 +2001,7 @@ impl ClegLCDNumber ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -2006,6 +2047,7 @@ impl ClegHeaderView ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -2050,6 +2092,7 @@ impl ClegColumnView ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -2100,6 +2143,7 @@ impl ClegSizeGrip ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -2144,6 +2188,7 @@ impl ClegDialogButtonBox ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -2191,6 +2236,7 @@ impl ClegOpenGLWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
@@ -2236,6 +2282,7 @@ impl ClegVideoWidget ClegNode {
         s.style["color"] = "255,255,255";
         s.style["bg"] = "56,64,84";
         s.style["size"] = "4";
+        s.style["font"] = "monospace";
         s.style["pos"] = "0,0";
         s.style["items"] = "";
         s.style["tabs"] = "";
