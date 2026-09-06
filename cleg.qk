@@ -15,6 +15,32 @@
  */
 program library;
 
+// ---------- QSS 风格 style 解析（Qt 语义键 + 旧键回退） ----------
+space {
+    // st：读 style 键（QSS 名优先，fbs 为回退链 "key1;key2;fb"——按序取首个非空）
+    fn st(style HashTable<String, String>, key String, fallback String) String {
+        v String = style.get(key);
+        if (v != "") { return v; }
+        return fallback;
+    }
+    // num：数值 style（fallback 缺省）
+    fn num(style HashTable<String, String>, key String, fb int) int {
+        v String = style.get(key);
+        if (v != "") { return v.toInt(); }
+        return fb;
+    }
+    // color：rgb 字符串 → 三个通道（"r,g,b"），缺省 fallback 通道
+    fn cr(style HashTable<String, String>, key String, idx int, fb int) int {
+        v String = style.get(key);
+        if (v != "") {
+            p List<String> = v.split(",");
+            if (p.size() > idx) { return p[idx].toInt(); }
+        }
+        return fb;
+    }
+} (qss);
+
+
 interface {
     dynamic fn render(self Self) void;
     dynamic fn setStyle(self Self, file String) void;
@@ -50,7 +76,9 @@ impl ClegMainWindow ClegNode {
         return s;
     }
     fn render(self) void {
-        qkcleg_clear(30, 34, 46);
+        qkcleg_clear(qss::cr(self.style, "background-color", 0, 30),
+            qss::cr(self.style, "background-color", 1, 34),
+            qss::cr(self.style, "background-color", 2, 46));
         qkcleg_rect(self.getX() + 64, self.getY() + 48, 1152, 704, 38, 44, 60);
         qkcleg_rect(self.getX() + 64, self.getY() + 48, 1152, 64, 52, 211, 235);
         qkcleg_text(self.getX() + 96, self.getY() + 64, 6, 8, 28, 46, self.style.get("title"));
@@ -238,11 +266,12 @@ impl ClegLabel ClegNode {
         return s;
     }
     fn render(self) void {
-        qkcleg_text_ex(self.getX(), self.getY(), self.style.get("size").toInt(),
-        self.style.get("color").split(",")[0].toInt(),
-        self.style.get("color").split(",")[1].toInt(),
-        self.style.get("color").split(",")[2].toInt(),
-        self.style.get("text"), self.style.get("font"));
+        qkcleg_text_ex(self.getX(), self.getY(), qss::num(self.style, "font-size", 4),
+            qss::cr(self.style, "color", 0, 255),
+            qss::cr(self.style, "color", 1, 255),
+            qss::cr(self.style, "color", 2, 255),
+            self.style.get("text"),
+            qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -287,13 +316,18 @@ impl ClegButton ClegNode {
         return s;
     }
     fn render(self) void {
-        bg String = self.style.get("bg");
-        qkcleg_rect(self.getX(), self.getY(), self.w, self.h,
-        bg.split(",")[0].toInt(), bg.split(",")[1].toInt(), bg.split(",")[2].toInt());
-        color String = self.style.get("color");
-        qkcleg_text_ex(self.getX() + 16, self.getY() + 12, 4,
-        color.split(",")[0].toInt(), color.split(",")[1].toInt(), color.split(",")[2].toInt(),
-        self.style.get("text"), self.style.get("font"));
+        // QSS 键优先：background-color / color / border-radius / font-size / font-family
+        qkcleg_roundrect(self.getX(), self.getY(), self.w, self.h,
+            qss::num(self.style, "border-radius", 0),
+            qss::cr(self.style, "background-color", 0, 56),
+            qss::cr(self.style, "background-color", 1, 64),
+            qss::cr(self.style, "background-color", 2, 84));
+        qkcleg_text_ex(self.getX() + 16, self.getY() + 12, qss::num(self.style, "font-size", 4),
+            qss::cr(self.style, "color", 0, 255),
+            qss::cr(self.style, "color", 1, 255),
+            qss::cr(self.style, "color", 2, 255),
+            self.style.get("text"),
+            qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
