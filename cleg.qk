@@ -15,30 +15,47 @@
  */
 program library;
 
-// ---------- QSS 风格 style 解析（Qt 语义键 + 旧键回退） ----------
+// ---------- 布局（Qt QBoxLayout 语义：按槽位重排节点 pos） ----------
 space {
-    // st：读 style 键（QSS 名优先，fbs 为回退链 "key1;key2;fb"——按序取首个非空）
-    fn st(style HashTable<String, String>, key String, fallback String) String {
-        v String = style.get(key);
-        if (v != "") { return v; }
-        return fallback;
-    }
-    // num：数值 style（fallback 缺省）
-    fn num(style HashTable<String, String>, key String, fb int) int {
-        v String = style.get(key);
-        if (v != "") { return v.toInt(); }
-        return fb;
-    }
-    // color：rgb 字符串 → 三个通道（"r,g,b"），缺省 fallback 通道
-    fn cr(style HashTable<String, String>, key String, idx int, fb int) int {
-        v String = style.get(key);
-        if (v != "") {
-            p List<String> = v.split(",");
-            if (p.size() > idx) { return p[idx].toInt(); }
+    fn vbox(items List<ClegNode>, x int, y int, w int, spacing int) void {
+        cur int = y;
+        i int = 0;
+        while (i < items.size()) {
+            n ClegNode = items[i];
+            n.getStyle()["pos"] = x.toString() + "," + cur.toString();
+            cur = cur + n.getH() + spacing;
+            i = i + 1;
         }
-        return fb;
     }
-} (qss);
+    fn hbox(items List<ClegNode>, x int, y int, spacing int) void {
+        cur int = x;
+        i int = 0;
+        while (i < items.size()) {
+            n ClegNode = items[i];
+            n.getStyle()["pos"] = cur.toString() + "," + y.toString();
+            cur = cur + n.getW() + spacing;
+            i = i + 1;
+        }
+    }
+    fn grid(items List<ClegNode>, x int, y int, cols int, cw int, ch int, spacing int) void {
+        i int = 0;
+        while (i < items.size()) {
+            n ClegNode = items[i];
+            gx int = x + (i % cols) * (cw + spacing);
+            gy int = y + (i / cols) * (ch + spacing);
+            n.getStyle()["pos"] = gx.toString() + "," + gy.toString();
+            i = i + 1;
+        }
+    }
+} (cleglayout);
+
+// ---------- 信号（Qt signal 语义 v1：qksignal_emit 触发节点方法 onClicked 等） ----------
+space {
+    fn emit(node ClegNode, name String) void {
+        qksignal_emit(node, name);
+    }
+} (clegsignal);
+
 
 
 interface {
@@ -76,9 +93,9 @@ impl ClegMainWindow ClegNode {
         return s;
     }
     fn render(self) void {
-        qkcleg_clear(qss::cr(self.style, "background-color", 0, 30),
-            qss::cr(self.style, "background-color", 1, 34),
-            qss::cr(self.style, "background-color", 2, 46));
+        qkcleg_clear(qkstyle_cr(self.style, "background-color", 0, 30),
+            qkstyle_cr(self.style, "background-color", 1, 34),
+            qkstyle_cr(self.style, "background-color", 2, 46));
         qkcleg_rect(self.getX() + 64, self.getY() + 48, 1152, 704, 38, 44, 60);
         qkcleg_rect(self.getX() + 64, self.getY() + 48, 1152, 64, 52, 211, 235);
         qkcleg_text(self.getX() + 96, self.getY() + 64, 6, 8, 28, 46, self.style.get("title"));
@@ -86,10 +103,12 @@ impl ClegMainWindow ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -133,10 +152,12 @@ impl ClegDialog ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -179,10 +200,12 @@ impl ClegFrame ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -226,10 +249,12 @@ impl ClegGroupBox ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -266,20 +291,22 @@ impl ClegLabel ClegNode {
         return s;
     }
     fn render(self) void {
-        qkcleg_text_ex(self.getX(), self.getY(), qss::num(self.style, "font-size", 4),
-            qss::cr(self.style, "color", 0, 255),
-            qss::cr(self.style, "color", 1, 255),
-            qss::cr(self.style, "color", 2, 255),
+        qkcleg_text_ex(self.getX(), self.getY(), qkstyle_num(self.style, "font-size", 4),
+            qkstyle_cr(self.style, "color", 0, 255),
+            qkstyle_cr(self.style, "color", 1, 255),
+            qkstyle_cr(self.style, "color", 2, 255),
             self.style.get("text"),
-            qss::st(self.style, "font-family", "monospace"));
+            qkstyle_get(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -318,24 +345,26 @@ impl ClegButton ClegNode {
     fn render(self) void {
         // QSS 键优先：background-color / color / border-radius / font-size / font-family
         qkcleg_roundrect(self.getX(), self.getY(), self.w, self.h,
-            qss::num(self.style, "border-radius", 0),
-            qss::cr(self.style, "background-color", 0, 56),
-            qss::cr(self.style, "background-color", 1, 64),
-            qss::cr(self.style, "background-color", 2, 84));
-        qkcleg_text_ex(self.getX() + 16, self.getY() + 12, qss::num(self.style, "font-size", 4),
-            qss::cr(self.style, "color", 0, 255),
-            qss::cr(self.style, "color", 1, 255),
-            qss::cr(self.style, "color", 2, 255),
+            qkstyle_num(self.style, "border-radius", 0),
+            qkstyle_cr(self.style, "background-color", 0, 56),
+            qkstyle_cr(self.style, "background-color", 1, 64),
+            qkstyle_cr(self.style, "background-color", 2, 84));
+        qkcleg_text_ex(self.getX() + 16, self.getY() + 12, qkstyle_num(self.style, "font-size", 4),
+            qkstyle_cr(self.style, "color", 0, 255),
+            qkstyle_cr(self.style, "color", 1, 255),
+            qkstyle_cr(self.style, "color", 2, 255),
             self.style.get("text"),
-            qss::st(self.style, "font-family", "monospace"));
+            qkstyle_get(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -380,10 +409,12 @@ impl ClegCheckBox ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -428,10 +459,12 @@ impl ClegRadioButton ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -475,10 +508,12 @@ impl ClegLineEdit ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -526,10 +561,12 @@ impl ClegTextEdit ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -577,10 +614,12 @@ impl ClegPlainTextEdit ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -628,10 +667,12 @@ impl ClegTextBrowser ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -676,10 +717,12 @@ impl ClegProgressBar ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -723,10 +766,12 @@ impl ClegSlider ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -770,10 +815,12 @@ impl ClegScrollBar ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -818,10 +865,12 @@ impl ClegDial ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -866,10 +915,12 @@ impl ClegSpinBox ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -914,10 +965,12 @@ impl ClegDoubleSpinBox ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -963,10 +1016,12 @@ impl ClegComboBox ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1008,18 +1063,29 @@ impl ClegListWidget ClegNode {
         items List<String> = self.style.get("items").split(";");
         i int = 0;
         while (i < items.size()) {
-        if (i == self.current) { qkcleg_rect(self.getX(), self.getY() + i * 28, self.w, 28, 52, 130, 180); }
-        qkcleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, items[i]);
+        if (i == self.current) {
+            qkcleg_rect(self.getX(), self.getY() + i * 28, self.w, 28,
+                qkstyle_cr(self.style, "selection-background-color", 0, 52),
+                qkstyle_cr(self.style, "selection-background-color", 1, 130),
+                qkstyle_cr(self.style, "selection-background-color", 2, 180));
+        }
+        qkcleg_text_ex(self.getX() + 8, self.getY() + i * 28 + 4, 4,
+            qkstyle_cr(self.style, "selection-color", 0, 20),
+            qkstyle_cr(self.style, "selection-color", 1, 26),
+            qkstyle_cr(self.style, "selection-color", 2, 38),
+            items[i], self.style.get("font"));
         i = i + 1;
         }
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1069,10 +1135,12 @@ impl ClegListView ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1121,10 +1189,12 @@ impl ClegTableWidget ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1173,10 +1243,12 @@ impl ClegTableView ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1225,10 +1297,12 @@ impl ClegTreeWidget ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1277,10 +1351,12 @@ impl ClegTreeView ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1332,10 +1408,12 @@ impl ClegTabWidget ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1379,10 +1457,12 @@ impl ClegStackedWidget ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1434,10 +1514,12 @@ impl ClegToolBox ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1482,10 +1564,12 @@ impl ClegMenuBar ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1530,10 +1614,12 @@ impl ClegMenu ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1582,10 +1668,12 @@ impl ClegToolBar ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1628,10 +1716,12 @@ impl ClegStatusBar ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1674,10 +1764,12 @@ impl ClegScrollArea ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1719,10 +1811,12 @@ impl ClegSplitter ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1765,10 +1859,12 @@ impl ClegDockWidget ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1810,10 +1906,12 @@ impl ClegMdiArea ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1856,10 +1954,12 @@ impl ClegMdiSubWindow ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1910,10 +2010,12 @@ impl ClegCalendarWidget ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -1957,10 +2059,12 @@ impl ClegDateEdit ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -2004,10 +2108,12 @@ impl ClegTimeEdit ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -2051,10 +2157,12 @@ impl ClegLCDNumber ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -2096,10 +2204,12 @@ impl ClegHeaderView ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -2148,10 +2258,12 @@ impl ClegColumnView ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -2193,10 +2305,12 @@ impl ClegSizeGrip ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -2240,10 +2354,12 @@ impl ClegDialogButtonBox ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -2287,10 +2403,12 @@ impl ClegOpenGLWidget ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
@@ -2333,10 +2451,12 @@ impl ClegVideoWidget ClegNode {
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[0].toInt();
     }
     fn getY(self) int {
         p List<String> = self.style.get("pos").split(",");
+        if (p.size() < 2) { return 0; }
         return p[1].toInt();
     }
     fn getW(self) int { return self.w; }
