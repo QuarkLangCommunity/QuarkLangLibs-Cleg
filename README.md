@@ -5,7 +5,7 @@
 ## 核心设计
 
 - **ClegNode 核心接口**（dynamic 协议）：`render` / `setStyle(jsonText)` / `getStyle` / `getX` / `getY` / `getW` / `getH`
-- **48 类组件**全部实现 ClegNode（window/标准容器/文本输入/按钮/数值状态/数据视图/菜单栏/日期时间/其它，见下）
+- **47 类组件**全部实现 ClegNode（window/标准容器/文本输入/按钮/数值状态/数据视图/菜单栏/日期时间/其它，见下）
 - **全节点 Style（HashTable<String,String>）驱动渲染**，语义键采用 **QSS**（Qt Style Sheets）命名：
   ```qk
   label.style["text"] = "HELLO";
@@ -28,7 +28,7 @@
   ```
 - 字体回退链：`font-family` 逐名探测系统字体（Linux `/usr/share/fonts`、macOS `/System/Library/Fonts`、Windows `C:\Windows\Fonts`），FreeType 光栅（Linux）渲染，链末端内置 5×7 位图兜底——跨系统一致
 
-## 组件全集（48 类，全部 impl ClegNode）
+## 组件全集（47 类，全部 impl ClegNode）
 
 - **窗口/容器**：ClegMainWindow（默认窗口）、ClegDialog、ClegFrame、ClegGroupBox、ClegScrollArea、ClegSplitter、ClegDockWidget、ClegMdiArea、ClegMdiSubWindow、ClegStackedWidget、ClegTabWidget、ClegToolBox
 - **文本输入/显示**：ClegLabel、ClegLineEdit、ClegTextEdit、ClegPlainTextEdit、ClegTextBrowser
