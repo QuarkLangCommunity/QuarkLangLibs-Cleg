@@ -1,0 +1,168 @@
+/* QuarkLang 官方库：cleg —— 轻量 GUI 框架（官方认证）
+ *
+ * 设计：
+ *   - ClegNode 是核心接口（dynamic 协议）：
+ *       render(self Self) void        —— 节点自渲染（style 驱动）
+ *       getStyle(self Self) HashTable<String, String> —— 所有节点都有 Style
+ *       getX/getY/getW/getH(self Self) int —— 布局信息
+ *   - 所有节点有 Style(HashTable<String,String>)，style 决定渲染：
+ *       label.style["text"] = "HELLO CLEG";
+ *       label.style["color"] = "255,255,255";
+ *   - 默认窗口 ClegWindow 实现 ClegNode；Label/Button 同样实现 ClegNode。
+ *
+ * 渲染后端：cleg::run 驱动（软件光栅帧缓冲，v1），Vulkan/GPU 后端走
+ * QuarkLangLibs-Vulkan 声明集（路线 v2）。
+ */
+program library;
+
+interface {
+    dynamic fn render(self Self) void;
+    dynamic fn getStyle(self Self) HashTable<String, String>;
+    dynamic fn getX(self Self) int;
+    dynamic fn getY(self Self) int;
+    dynamic fn getW(self Self) int;
+    dynamic fn getH(self Self) int;
+} ClegNode;
+
+// ---------- 默认窗口：实现 ClegNode ----------
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegWindow;
+
+impl ClegWindow ClegNode {
+    // 默认样式：bg=窗口底色; title=标题文本; winColor=顶栏背景
+    fn new() ClegWindow {
+        w ClegWindow;
+        w.style = HashTable::new();
+        w.style["bg"] = "30,34,46";
+        w.style["title"] = "CLEG";
+        w.style["winColor"] = "52,211,235";
+        w.x = 0; w.y = 0; w.w = 1280; w.h = 800;
+        return w;
+    }
+    fn render(self) void {
+        r int = 30; g int = 34; b2 int = 46;
+        qkcleg_clear(r, g, b2);
+        qkcleg_rect(self.x + 64, self.y + 48, self.w - 128, self.h - 96, 38, 44, 60);
+        qkcleg_rect(self.x + 64, self.y + 48, self.w - 128, 64, 52, 211, 235);
+        qkcleg_text(self.x + 96, self.y + 64, 6, 8, 28, 46, self.style.get("title"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int { return self.x; }
+    fn getY(self) int { return self.y; }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegWindow;
+
+// ---------- Label：实现 ClegNode（style["text"]/color/size/pos） ----------
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegLabel;
+
+impl ClegLabel ClegNode {
+    fn new() ClegLabel {
+        l ClegLabel;
+        l.style = HashTable::new();
+        l.style["text"] = "Label";
+        l.style["color"] = "8,28,46";
+        l.style["size"] = "4";
+        l.style["pos"] = "0,0";
+        l.x = 0; l.y = 0; l.w = 0; l.h = 0;
+        return l;
+    }
+    fn render(self) void {
+        text String = self.style.get("text");
+        size int = self.style.get("size").toInt();
+        color String = self.style.get("color");
+        qkcleg_text(self.getX(), self.getY(), size,
+            color.split(",")[0].toInt(),
+            color.split(",")[1].toInt(),
+            color.split(",")[2].toInt(),
+            text);
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegLabel;
+
+// ---------- Button：实现 ClegNode（style["text"]/bg 等） ----------
+struct {
+    style HashTable<String, String>;
+    x int;
+    y int;
+    w int;
+    h int;
+} ClegButton;
+
+impl ClegButton ClegNode {
+    fn new() ClegButton {
+        b ClegButton;
+        b.style = HashTable::new();
+        b.style["text"] = "Button";
+        b.style["bg"] = "240,98,146";
+        b.style["color"] = "255,255,255";
+        b.style["pos"] = "0,0";
+        b.style["size"] = "200,48";
+        b.x = 0; b.y = 0; b.w = 200; b.h = 48;
+        return b;
+    }
+    fn render(self) void {
+        bg String = self.style.get("bg");
+        size List<String> = self.style.get("size").split(",");
+        qkcleg_rect(self.getX(), self.getY(), size[0].toInt(), size[1].toInt(),
+            bg.split(",")[0].toInt(),
+            bg.split(",")[1].toInt(),
+            bg.split(",")[2].toInt());
+        color String = self.style.get("color");
+        qkcleg_text(self.getX() + 16, self.getY() + 12, 4,
+            color.split(",")[0].toInt(),
+            color.split(",")[1].toInt(),
+            color.split(",")[2].toInt(),
+            self.style.get("text"));
+    }
+    fn getStyle(self) HashTable<String, String> { return self.style; }
+    fn getX(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[0].toInt();
+    }
+    fn getY(self) int {
+        p List<String> = self.style.get("pos").split(",");
+        return p[1].toInt();
+    }
+    fn getW(self) int { return self.w; }
+    fn getH(self) int { return self.h; }
+} ClegButton;
+
+// ---------- 顶层驱动 ----------
+space {
+    // cleg::init(w, h)：创建帧缓冲
+    fn init(w int, h int) void {
+        qkcleg_create(w, h);
+    }
+    // cleg::runTree()：渲染窗口节点树（v1：显式调用节点 render）
+    fn runTree(win ClegNode, label ClegNode, btn ClegNode) void {
+        win.render();
+        label.render();
+        btn.render();
+    }
+    // cleg::frame(path)：输出渲染帧（调试验证；真实环境为提交交换链）
+    fn frame(path String) void {
+        qkcleg_frame(path);
+    }
+} (cleg);
