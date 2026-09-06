@@ -2127,4 +2127,11 @@ impl ClegVideoWidget ClegNode {
 space {
     fn init(w int, h int) void { qkcleg_create(w, h); }
     fn frame(path String) void { qkcleg_frame(path); }
+    // 跨系统屏幕宿主：Linux=X11 / Windows=GDI / 其它=帧输出回退
+    fn show(w int, h int, title String) void {
+        qkcleg_create(w, h);
+        qkscreen_open(w, h, title);
+    }
+    fn present() void { qkscreen_present(); }
+    fn hide() void { qkscreen_close(); }
 } (cleg);
