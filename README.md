@@ -2,6 +2,9 @@
 
 **QuarkLang 官方库（cleg）——全面 GUI 框架（Qt 参考），官方认证。**
 
+> ⚠️ **旧 style 键 `font`/`size` 已弃用**（仅 5×7 位图路径：小写残缺、字号格子化）。
+> 统一使用 QSS 语义键：`font-family`（字体回退链，含 **CJK 自动选择**）+ `font-size`（像素，FreeType 全字符）。
+
 ## 核心设计
 
 - **ClegNode 核心接口**（dynamic 协议）：`render` / `setStyle(jsonText)` / `getStyle` / `getX` / `getY` / `getW` / `getH`
