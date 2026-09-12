@@ -17,6 +17,19 @@ program library;
 
 import "json";
 
+// ---------- cleg 渲染服务（native: libclegrt.so，纯 Go 零依赖跨系统） ----------
+library clegrt {
+    fn cleg_create(w int, h int) int;
+    fn cleg_clear(r int, g int, b int) int;
+    fn cleg_rect(x int, y int, w int, h int, r int, g int, b int) int;
+    fn cleg_roundrect(x int, y int, w int, h int, radius int, r int, g int, b int) int;
+    fn cleg_text(x int, y int, size int, r int, g int, b int, text String, font String) int;
+    fn cleg_frame(path String) int;
+    fn cleg_screen_open(w int, h int, title String) int;
+    fn cleg_screen_present() int;
+    fn cleg_screen_close() int;
+}
+
 // ---------- QSS 风格 style 读取（纯 qk；旧键别名回退） ----------
 space {
     fn st(style HashTable<String, String>, key String, fallback String) String {
@@ -32,7 +45,7 @@ space {
         return fb;
     }
     fn cr(style HashTable<String, String>, key String, idx int, fb int) int {
-        v String = st(style, key, "");
+        v String = qss::st(style, key, "");
         if (v == "") { return fb; }
         parts List<String> = v.split(",");
         if (parts.size() > idx) { return parts[idx].toInt(); }
@@ -40,15 +53,11 @@ space {
     }
 } (qss);
 
-// ---------- 自动重绘（纯 qk：注册 + tick 遍历 render） ----------
-clegAutoNodes List<ClegNode> = List::new();
-fn auto(node ClegNode) void {
-    clegAutoNodes.append(node);
-}
-fn tick() void {
+// ---------- 自动重绘（纯 qk：tick 遍历节点列表逐个 render） ----------
+fn tick(nodes List<ClegNode>) void {
     i int = 0;
-    while (i < clegAutoNodes.size()) {
-        n ClegNode = clegAutoNodes[i];
+    while (i < nodes.size()) {
+        n ClegNode = nodes[i];
         n.render();
         i = i + 1;
     }
@@ -139,12 +148,12 @@ impl ClegMainWindow ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.clear(qss::cr(self.style, "background-color", 0, 30),
+        clegrt.cleg_clear(qss::cr(self.style, "background-color", 0, 30),
             qss::cr(self.style, "background-color", 1, 34),
             qss::cr(self.style, "background-color", 2, 46));
-        clegrt.rect(self.getX() + 64, self.getY() + 48, 1152, 704, 38, 44, 60);
-        clegrt.rect(self.getX() + 64, self.getY() + 48, 1152, 64, 52, 211, 235);
-        clegrt.text(self.getX() + 96, self.getY() + 64, 6, 8, 28, 46, self.style.get("title"));
+        clegrt.cleg_rect(self.getX() + 64, self.getY() + 48, 1152, 704, 38, 44, 60);
+        clegrt.cleg_rect(self.getX() + 64, self.getY() + 48, 1152, 64, 52, 211, 235);
+        clegrt.cleg_text(self.getX() + 96, self.getY() + 64, 6, 8, 28, 46, self.style.get("title"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -198,9 +207,9 @@ impl ClegDialog ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), 480, 300, 44, 50, 66);
-        clegrt.rect(self.getX(), self.getY(), 480, 56, 52, 211, 235);
-        clegrt.text(self.getX() + 16, self.getY() + 12, 4, 8, 28, 46, self.style.get("title"));
+        clegrt.cleg_rect(self.getX(), self.getY(), 480, 300, 44, 50, 66);
+        clegrt.cleg_rect(self.getX(), self.getY(), 480, 56, 52, 211, 235);
+        clegrt.cleg_text(self.getX() + 16, self.getY() + 12, 4, 8, 28, 46, self.style.get("title"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -254,8 +263,8 @@ impl ClegFrame ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 26, 30, 40);
-        clegrt.rect(self.getX(), self.getY(), self.w, 2, 52, 211, 235);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 26, 30, 40);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, 2, 52, 211, 235);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -309,9 +318,9 @@ impl ClegGroupBox ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
-        clegrt.rect(self.getX(), self.getY(), self.w, 3, 52, 211, 235);
-        clegrt.text(self.getX() + 12, self.getY() + 12, 4, 52, 211, 235, self.style.get("text"));
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, 3, 52, 211, 235);
+        clegrt.cleg_text(self.getX() + 12, self.getY() + 12, 4, 52, 211, 235, self.style.get("text"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -365,7 +374,7 @@ impl ClegLabel ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.text(self.getX(), self.getY(), qss::num(self.style, "font-size", 4),
+        clegrt.cleg_text(self.getX(), self.getY(), qss::num(self.style, "font-size", 4),
             qss::cr(self.style, "color", 0, 255),
             qss::cr(self.style, "color", 1, 255),
             qss::cr(self.style, "color", 2, 255),
@@ -425,12 +434,12 @@ impl ClegButton ClegNode {
     }
     fn render(self) void {
         // QSS 键优先：background-color / color / border-radius / font-size / font-family
-        clegrt.roundrect(self.getX(), self.getY(), self.w, self.h,
+        clegrt.cleg_roundrect(self.getX(), self.getY(), self.w, self.h,
             qss::num(self.style, "border-radius", 0),
             qss::cr(self.style, "background-color", 0, 56),
             qss::cr(self.style, "background-color", 1, 64),
             qss::cr(self.style, "background-color", 2, 84));
-        clegrt.text(self.getX() + 16, self.getY() + 12, qss::num(self.style, "font-size", 4),
+        clegrt.cleg_text(self.getX() + 16, self.getY() + 12, qss::num(self.style, "font-size", 4),
             qss::cr(self.style, "color", 0, 255),
             qss::cr(self.style, "color", 1, 255),
             qss::cr(self.style, "color", 2, 255),
@@ -490,9 +499,9 @@ impl ClegCheckBox ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), 36, 36, 120, 130, 150);
-        if (self.checked) { clegrt.rect(self.getX() + 8, self.getY() + 8, 20, 20, 52, 211, 235); }
-        clegrt.text(self.getX() + 48, self.getY() + 6, 4, 220, 225, 235, self.style.get("text"));
+        clegrt.cleg_rect(self.getX(), self.getY(), 36, 36, 120, 130, 150);
+        if (self.checked) { clegrt.cleg_rect(self.getX() + 8, self.getY() + 8, 20, 20, 52, 211, 235); }
+        clegrt.cleg_text(self.getX() + 48, self.getY() + 6, 4, 220, 225, 235, self.style.get("text"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -547,9 +556,9 @@ impl ClegRadioButton ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), 36, 36, 120, 130, 150);
-        if (self.checked) { clegrt.rect(self.getX() + 10, self.getY() + 10, 16, 16, 240, 170, 60); }
-        clegrt.text(self.getX() + 48, self.getY() + 6, 4, 220, 225, 235, self.style.get("text"));
+        clegrt.cleg_rect(self.getX(), self.getY(), 36, 36, 120, 130, 150);
+        if (self.checked) { clegrt.cleg_rect(self.getX() + 10, self.getY() + 10, 16, 16, 240, 170, 60); }
+        clegrt.cleg_text(self.getX() + 48, self.getY() + 6, 4, 220, 225, 235, self.style.get("text"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -603,9 +612,9 @@ impl ClegLineEdit ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
-        clegrt.rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
-        clegrt.text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"));
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
+        clegrt.cleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -620,7 +629,7 @@ impl ClegLineEdit ClegNode {
     }
     fn getW(self) int { return self.w; }
     fn getH(self) int { return self.h; }
-    fn setText(self, t String) void { self.style["text"] = t; } fn text(self) String { return self.style.get("text"); }
+    fn setText(self, t String) void { self.style["text"] = t; } fn cleg_text(self) String { return self.style.get("text"); }
     fn setStyle(self, jsonText String) void {
         obj HashTable<String, String> = json::loads(jsonText);
         ks List<String> = obj.keys();
@@ -659,11 +668,11 @@ impl ClegTextEdit ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         lines List<String> = self.style.get("text").split("\n");
         i int = 0;
         while (i < 8) {
-        if (i < lines.size()) { clegrt.text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i]); }
+        if (i < lines.size()) { clegrt.cleg_text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i], qss::st(self.style, "font-family", "monospace")); }
         i = i + 1;
         }
     }
@@ -719,11 +728,11 @@ impl ClegPlainTextEdit ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         lines List<String> = self.style.get("text").split("\n");
         i int = 0;
         while (i < 8) {
-        if (i < lines.size()) { clegrt.text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i]); }
+        if (i < lines.size()) { clegrt.cleg_text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i], qss::st(self.style, "font-family", "monospace")); }
         i = i + 1;
         }
     }
@@ -779,11 +788,11 @@ impl ClegTextBrowser ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         lines List<String> = self.style.get("text").split("\n");
         i int = 0;
         while (i < 8) {
-        if (i < lines.size()) { clegrt.text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i]); }
+        if (i < lines.size()) { clegrt.cleg_text(self.getX() + 8, self.getY() + 8 + i * 24, 4, 20, 26, 38, lines[i], qss::st(self.style, "font-family", "monospace")); }
         i = i + 1;
         }
     }
@@ -840,9 +849,9 @@ impl ClegProgressBar ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 60, 66, 82);
-        clegrt.rect(self.getX(), self.getY(), self.w * self.value / 100, self.h, 52, 211, 235);
-        clegrt.text(self.getX() + self.w / 2 - 24, self.getY() + 6, 3, 255, 255, 255, self.value.toString());
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 60, 66, 82);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w * self.value / 100, self.h, 52, 211, 235);
+        clegrt.cleg_text(self.getX() + self.w / 2 - 24, self.getY() + 6, 3, 255, 255, 255, self.value.toString(), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -897,8 +906,8 @@ impl ClegSlider ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY() + 18, self.w, 8, 90, 100, 120);
-        clegrt.rect(self.getX() + self.w * self.value / 100 - 8, self.getY() + 8, 24, 28, 52, 211, 235);
+        clegrt.cleg_rect(self.getX(), self.getY() + 18, self.w, 8, 90, 100, 120);
+        clegrt.cleg_rect(self.getX() + self.w * self.value / 100 - 8, self.getY() + 8, 24, 28, 52, 211, 235);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -953,8 +962,8 @@ impl ClegScrollBar ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY() + 18, self.w, 8, 90, 100, 120);
-        clegrt.rect(self.getX() + self.w * self.value / 100 - 8, self.getY() + 8, 24, 28, 52, 211, 235);
+        clegrt.cleg_rect(self.getX(), self.getY() + 18, self.w, 8, 90, 100, 120);
+        clegrt.cleg_rect(self.getX() + self.w * self.value / 100 - 8, self.getY() + 8, 24, 28, 52, 211, 235);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1009,9 +1018,9 @@ impl ClegDial ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), 96, 96, 60, 66, 82);
-        clegrt.rect(self.getX() + 24, self.getY() + 24, 48, 48, 52, 211, 235);
-        clegrt.rect(self.getX() + 40 + 76 * self.value / 100, self.getY() + 6, 16, 12, 240, 170, 60);
+        clegrt.cleg_rect(self.getX(), self.getY(), 96, 96, 60, 66, 82);
+        clegrt.cleg_rect(self.getX() + 24, self.getY() + 24, 48, 48, 52, 211, 235);
+        clegrt.cleg_rect(self.getX() + 40 + 76 * self.value / 100, self.getY() + 6, 16, 12, 240, 170, 60);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1066,9 +1075,9 @@ impl ClegSpinBox ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
-        clegrt.rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
-        clegrt.text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"));
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
+        clegrt.cleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1123,9 +1132,9 @@ impl ClegDoubleSpinBox ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
-        clegrt.rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
-        clegrt.text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"));
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, 2, 52, 130, 180);
+        clegrt.cleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.style.get("text"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1180,10 +1189,10 @@ impl ClegComboBox ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
-        clegrt.rect(self.getX() + self.w - 44, self.getY(), 44, self.h, 52, 130, 180);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX() + self.w - 44, self.getY(), 44, self.h, 52, 130, 180);
         items List<String> = self.style.get("items").split(";");
-        if (self.current < items.size()) { clegrt.text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, items[self.current]); }
+        if (self.current < items.size()) { clegrt.cleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, items[self.current], qss::st(self.style, "font-family", "monospace")); }
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1238,17 +1247,17 @@ impl ClegListWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         items List<String> = self.style.get("items").split(";");
         i int = 0;
         while (i < items.size()) {
         if (i == self.current) {
-            clegrt.rect(self.getX(), self.getY() + i * 28, self.w, 28,
+            clegrt.cleg_rect(self.getX(), self.getY() + i * 28, self.w, 28,
                 qss::cr(self.style, "selection-background-color", 0, 52),
                 qss::cr(self.style, "selection-background-color", 1, 130),
                 qss::cr(self.style, "selection-background-color", 2, 180));
         }
-        clegrt.text(self.getX() + 8, self.getY() + i * 28 + 4, 4,
+        clegrt.cleg_text(self.getX() + 8, self.getY() + i * 28 + 4, 4,
             qss::cr(self.style, "selection-color", 0, 20),
             qss::cr(self.style, "selection-color", 1, 26),
             qss::cr(self.style, "selection-color", 2, 38),
@@ -1309,12 +1318,12 @@ impl ClegListView ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         items List<String> = self.style.get("items").split(";");
         i int = 0;
         while (i < items.size()) {
-        if (i == self.current) { clegrt.rect(self.getX(), self.getY() + i * 28, self.w, 28, 52, 130, 180); }
-        clegrt.text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, items[i]);
+        if (i == self.current) { clegrt.cleg_rect(self.getX(), self.getY() + i * 28, self.w, 28, 52, 130, 180); }
+        clegrt.cleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, items[i], qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
     }
@@ -1370,12 +1379,12 @@ impl ClegTableWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         rows int = self.style.get("rows").toInt();
         i int = 0;
         while (i < rows) {
-        clegrt.rect(self.getX(), self.getY() + i * 28, self.w, 2, 170, 178, 190);
-        clegrt.text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, self.style.get("row" + i.toString()));
+        clegrt.cleg_rect(self.getX(), self.getY() + i * 28, self.w, 2, 170, 178, 190);
+        clegrt.cleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, self.style.get("row" + i.toString()), qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
     }
@@ -1431,12 +1440,12 @@ impl ClegTableView ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         rows int = self.style.get("rows").toInt();
         i int = 0;
         while (i < rows) {
-        clegrt.rect(self.getX(), self.getY() + i * 28, self.w, 2, 170, 178, 190);
-        clegrt.text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, self.style.get("row" + i.toString()));
+        clegrt.cleg_rect(self.getX(), self.getY() + i * 28, self.w, 2, 170, 178, 190);
+        clegrt.cleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, self.style.get("row" + i.toString()), qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
     }
@@ -1492,12 +1501,12 @@ impl ClegTreeWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         items List<String> = self.style.get("items").split(";");
         i int = 0;
         while (i < items.size()) {
-        clegrt.rect(self.getX() + 16, self.getY() + i * 28 + 10, 12, 2, 100, 110, 130);
-        clegrt.text(self.getX() + 36, self.getY() + i * 28 + 4, 4, 20, 26, 38, items[i]);
+        clegrt.cleg_rect(self.getX() + 16, self.getY() + i * 28 + 10, 12, 2, 100, 110, 130);
+        clegrt.cleg_text(self.getX() + 36, self.getY() + i * 28 + 4, 4, 20, 26, 38, items[i], qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
     }
@@ -1553,12 +1562,12 @@ impl ClegTreeView ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         items List<String> = self.style.get("items").split(";");
         i int = 0;
         while (i < items.size()) {
-        clegrt.rect(self.getX() + 16, self.getY() + i * 28 + 10, 12, 2, 100, 110, 130);
-        clegrt.text(self.getX() + 36, self.getY() + i * 28 + 4, 4, 20, 26, 38, items[i]);
+        clegrt.cleg_rect(self.getX() + 16, self.getY() + i * 28 + 10, 12, 2, 100, 110, 130);
+        clegrt.cleg_text(self.getX() + 36, self.getY() + i * 28 + 4, 4, 20, 26, 38, items[i], qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
     }
@@ -1615,16 +1624,16 @@ impl ClegTabWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         tabs List<String> = self.style.get("tabs").split(";");
         i int = 0;
         while (i < tabs.size()) {
-        if (i == self.current) { clegrt.rect(self.getX() + i * 128, self.getY(), 124, 40, 52, 130, 180); }
-        else { clegrt.rect(self.getX() + i * 128, self.getY(), 124, 40, 200, 205, 215); }
-        clegrt.text(self.getX() + 20 + i * 128, self.getY() + 10, 3, 20, 26, 38, tabs[i]);
+        if (i == self.current) { clegrt.cleg_rect(self.getX() + i * 128, self.getY(), 124, 40, 52, 130, 180); }
+        else { clegrt.cleg_rect(self.getX() + i * 128, self.getY(), 124, 40, 200, 205, 215); }
+        clegrt.cleg_text(self.getX() + 20 + i * 128, self.getY() + 10, 3, 20, 26, 38, tabs[i], qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
-        clegrt.rect(self.getX(), self.getY() + 40, self.w, 2, 170, 178, 190);
+        clegrt.cleg_rect(self.getX(), self.getY() + 40, self.w, 2, 170, 178, 190);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1679,8 +1688,8 @@ impl ClegStackedWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
-        clegrt.text(self.getX() + 12, self.getY() + 12, 4, 120, 200, 240, self.current.toString());
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
+        clegrt.cleg_text(self.getX() + 12, self.getY() + 12, 4, 120, 200, 240, self.current.toString(), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1735,16 +1744,16 @@ impl ClegToolBox ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         tabs List<String> = self.style.get("tabs").split(";");
         i int = 0;
         while (i < tabs.size()) {
-        if (i == self.current) { clegrt.rect(self.getX() + i * 128, self.getY(), 124, 40, 52, 130, 180); }
-        else { clegrt.rect(self.getX() + i * 128, self.getY(), 124, 40, 200, 205, 215); }
-        clegrt.text(self.getX() + 20 + i * 128, self.getY() + 10, 3, 20, 26, 38, tabs[i]);
+        if (i == self.current) { clegrt.cleg_rect(self.getX() + i * 128, self.getY(), 124, 40, 52, 130, 180); }
+        else { clegrt.cleg_rect(self.getX() + i * 128, self.getY(), 124, 40, 200, 205, 215); }
+        clegrt.cleg_text(self.getX() + 20 + i * 128, self.getY() + 10, 3, 20, 26, 38, tabs[i], qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
-        clegrt.rect(self.getX(), self.getY() + 40, self.w, 2, 170, 178, 190);
+        clegrt.cleg_rect(self.getX(), self.getY() + 40, self.w, 2, 170, 178, 190);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1798,10 +1807,10 @@ impl ClegMenuBar ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, 40, 34, 40, 54);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, 40, 34, 40, 54);
         menus List<String> = self.style.get("menus").split(";");
         i int = 0;
-        while (i < menus.size()) { clegrt.text(self.getX() + 12 + i * 120, self.getY() + 10, 4, 220, 225, 235, menus[i]); i = i + 1; }
+        while (i < menus.size()) { clegrt.cleg_text(self.getX() + 12 + i * 120, self.getY() + 10, 4, 220, 225, 235, menus[i], qss::st(self.style, "font-family", "monospace")); i = i + 1; }
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1855,10 +1864,10 @@ impl ClegMenu ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
         items List<String> = self.style.get("items").split(";");
         i int = 0;
-        while (i < items.size()) { clegrt.text(self.getX() + 16, self.getY() + 10 + i * 26, 4, 220, 225, 235, items[i]); i = i + 1; }
+        while (i < items.size()) { clegrt.cleg_text(self.getX() + 16, self.getY() + 10 + i * 26, 4, 220, 225, 235, items[i], qss::st(self.style, "font-family", "monospace")); i = i + 1; }
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -1912,12 +1921,12 @@ impl ClegToolBar ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, 44, 50, 58, 76);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, 44, 50, 58, 76);
         items List<String> = self.style.get("items").split(";");
         i int = 0;
         while (i < items.size()) {
-        clegrt.rect(self.getX() + 8 + i * 72, self.getY() + 8, 56, 28, 52, 130, 180);
-        clegrt.text(self.getX() + 12 + i * 72, self.getY() + 14, 3, 20, 26, 38, items[i]);
+        clegrt.cleg_rect(self.getX() + 8 + i * 72, self.getY() + 8, 56, 28, 52, 130, 180);
+        clegrt.cleg_text(self.getX() + 12 + i * 72, self.getY() + 14, 3, 20, 26, 38, items[i], qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
     }
@@ -1973,8 +1982,8 @@ impl ClegStatusBar ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
-        clegrt.text(self.getX() + 12, self.getY() + 8, 3, 180, 190, 205, self.style.get("text"));
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
+        clegrt.cleg_text(self.getX() + 12, self.getY() + 8, 3, 180, 190, 205, self.style.get("text"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2028,8 +2037,8 @@ impl ClegScrollArea ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
-        clegrt.rect(self.getX() + self.w - 24, self.getY() + 16, 12, self.h - 48, 52, 130, 180);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX() + self.w - 24, self.getY() + 16, 12, self.h - 48, 52, 130, 180);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2082,8 +2091,8 @@ impl ClegSplitter ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 224, 230, 238);
-        clegrt.rect(self.getX() + self.w / 2 - 8, self.getY(), 16, self.h, 150, 158, 172);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 224, 230, 238);
+        clegrt.cleg_rect(self.getX() + self.w / 2 - 8, self.getY(), 16, self.h, 150, 158, 172);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2136,9 +2145,9 @@ impl ClegDockWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
-        clegrt.rect(self.getX(), self.getY(), 4, self.h, 52, 211, 235);
-        clegrt.text(self.getX() + 16, self.getY() + 8, 3, 180, 200, 220, self.style.get("title"));
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 44, 50, 66);
+        clegrt.cleg_rect(self.getX(), self.getY(), 4, self.h, 52, 211, 235);
+        clegrt.cleg_text(self.getX() + 16, self.getY() + 8, 3, 180, 200, 220, self.style.get("title"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2192,7 +2201,7 @@ impl ClegMdiArea ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 30, 34, 46);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 30, 34, 46);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2245,9 +2254,9 @@ impl ClegMdiSubWindow ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), 480, 300, 44, 50, 66);
-        clegrt.rect(self.getX(), self.getY(), 480, 56, 52, 211, 235);
-        clegrt.text(self.getX() + 16, self.getY() + 12, 4, 8, 28, 46, self.style.get("title"));
+        clegrt.cleg_rect(self.getX(), self.getY(), 480, 300, 44, 50, 66);
+        clegrt.cleg_rect(self.getX(), self.getY(), 480, 56, 52, 211, 235);
+        clegrt.cleg_text(self.getX() + 16, self.getY() + 12, 4, 8, 28, 46, self.style.get("title"), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2301,14 +2310,14 @@ impl ClegCalendarWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         days List<String> = "SUN,MON,TUE,WED,THU,FRI,SAT".split(",");
         i int = 0;
-        while (i < 7) { clegrt.text(self.getX() + 18 + i * 44, self.getY() + 8, 3, 60, 70, 90, days[i]); i = i + 1; }
+        while (i < 7) { clegrt.cleg_text(self.getX() + 18 + i * 44, self.getY() + 8, 3, 60, 70, 90, days[i], qss::st(self.style, "font-family", "monospace")); i = i + 1; }
         j int = 1;
         while (j < 32) {
-        clegrt.rect(self.getX() + 16 + (j - 1) % 7 * 44, self.getY() + 40 + (j - 1) / 7 * 36, 36, 28, 200, 208, 220);
-        clegrt.text(self.getX() + 24 + (j - 1) % 7 * 44, self.getY() + 44 + (j - 1) / 7 * 36, 3, 30, 38, 54, j.toString());
+        clegrt.cleg_rect(self.getX() + 16 + (j - 1) % 7 * 44, self.getY() + 40 + (j - 1) / 7 * 36, 36, 28, 200, 208, 220);
+        clegrt.cleg_text(self.getX() + 24 + (j - 1) % 7 * 44, self.getY() + 44 + (j - 1) / 7 * 36, 3, 30, 38, 54, j.toString(), qss::st(self.style, "font-family", "monospace"));
         j = j + 1;
         }
     }
@@ -2365,8 +2374,8 @@ impl ClegDateEdit ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
-        clegrt.text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.value.toString());
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.value.toString(), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2421,8 +2430,8 @@ impl ClegTimeEdit ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
-        clegrt.text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.value.toString());
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_text(self.getX() + 8, self.getY() + 10, 4, 20, 26, 38, self.value.toString(), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2477,8 +2486,8 @@ impl ClegLCDNumber ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 8, 12, 18);
-        clegrt.text(self.getX() + 16, self.getY() + 12, 6, 52, 211, 235, self.value.toString());
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 8, 12, 18);
+        clegrt.cleg_text(self.getX() + 16, self.getY() + 12, 6, 52, 211, 235, self.value.toString(), qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2532,7 +2541,7 @@ impl ClegHeaderView ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 34, 40, 54);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2586,12 +2595,12 @@ impl ClegColumnView ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 240, 245, 252);
         items List<String> = self.style.get("items").split(";");
         i int = 0;
         while (i < items.size()) {
-        if (i == self.current) { clegrt.rect(self.getX(), self.getY() + i * 28, self.w, 28, 52, 130, 180); }
-        clegrt.text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, items[i]);
+        if (i == self.current) { clegrt.cleg_rect(self.getX(), self.getY() + i * 28, self.w, 28, 52, 130, 180); }
+        clegrt.cleg_text(self.getX() + 8, self.getY() + i * 28 + 6, 4, 20, 26, 38, items[i], qss::st(self.style, "font-family", "monospace"));
         i = i + 1;
         }
     }
@@ -2646,8 +2655,8 @@ impl ClegSizeGrip ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX() + self.w - 24, self.getY() + self.h - 24, 12, 12, 120, 130, 150);
-        clegrt.rect(self.getX() + self.w - 36, self.getY() + self.h - 24, 10, 10, 150, 160, 180);
+        clegrt.cleg_rect(self.getX() + self.w - 24, self.getY() + self.h - 24, 12, 12, 120, 130, 150);
+        clegrt.cleg_rect(self.getX() + self.w - 36, self.getY() + self.h - 24, 10, 10, 150, 160, 180);
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2700,10 +2709,10 @@ impl ClegDialogButtonBox ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, 40, 34, 40, 54);
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, 40, 34, 40, 54);
         menus List<String> = self.style.get("menus").split(";");
         i int = 0;
-        while (i < menus.size()) { clegrt.text(self.getX() + 12 + i * 120, self.getY() + 10, 4, 220, 225, 235, menus[i]); i = i + 1; }
+        while (i < menus.size()) { clegrt.cleg_text(self.getX() + 12 + i * 120, self.getY() + 10, 4, 220, 225, 235, menus[i], qss::st(self.style, "font-family", "monospace")); i = i + 1; }
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2757,9 +2766,9 @@ impl ClegOpenGLWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 10, 14, 22);
-        clegrt.rect(self.getX() + 8, self.getY() + 8, self.w - 16, self.h - 16, 20, 28, 44);
-        clegrt.text(self.getX() + 24, self.getY() + 24, 4, 90, 200, 250, "GPU SURFACE");
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 10, 14, 22);
+        clegrt.cleg_rect(self.getX() + 8, self.getY() + 8, self.w - 16, self.h - 16, 20, 28, 44);
+        clegrt.cleg_text(self.getX() + 24, self.getY() + 24, 4, 90, 200, 250, "GPU SURFACE", qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2812,9 +2821,9 @@ impl ClegVideoWidget ClegNode {
         return s;
     }
     fn render(self) void {
-        clegrt.rect(self.getX(), self.getY(), self.w, self.h, 10, 14, 22);
-        clegrt.rect(self.getX() + 8, self.getY() + 8, self.w - 16, self.h - 16, 20, 28, 44);
-        clegrt.text(self.getX() + 24, self.getY() + 24, 4, 90, 200, 250, "GPU SURFACE");
+        clegrt.cleg_rect(self.getX(), self.getY(), self.w, self.h, 10, 14, 22);
+        clegrt.cleg_rect(self.getX() + 8, self.getY() + 8, self.w - 16, self.h - 16, 20, 28, 44);
+        clegrt.cleg_text(self.getX() + 24, self.getY() + 24, 4, 90, 200, 250, "GPU SURFACE", qss::st(self.style, "font-family", "monospace"));
     }
     fn getStyle(self) HashTable<String, String> { return self.style; }
     fn getX(self) int {
@@ -2843,13 +2852,13 @@ impl ClegVideoWidget ClegNode {
 
 // ---------- 顶层驱动 ----------
 space {
-    fn init(w int, h int) void { clegrt.create(w, h); }
-    fn frame(path String) void { clegrt.frame(path); }
+    fn init(w int, h int) void { clegrt.cleg_create(w, h); }
+    fn cleg_frame(path String) void { clegrt.cleg_frame(path); }
     // 跨系统屏幕宿主：Linux=X11 / Windows=GDI / 其它=帧输出回退
     fn show(w int, h int, title String) void {
-        clegrt.create(w, h);
-        clegrt.screen_open(w, h, title);
+        clegrt.cleg_create(w, h);
+        clegrt.cleg_screen_open(w, h, title);
     }
-    fn present() void { clegrt.screen_present(); }
-    fn hide() void { clegrt.screen_close(); }
+    fn present() void { clegrt.cleg_screen_present(); }
+    fn hide() void { clegrt.cleg_screen_close(); }
 } (cleg);

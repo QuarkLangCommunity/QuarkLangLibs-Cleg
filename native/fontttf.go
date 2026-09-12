@@ -329,6 +329,9 @@ func parseGlyphPts(g []byte, contours int) ([][2]int, []bool, []int, error) {
 	for p := 0; p < nPts; p++ {
 		f := flags[p]
 		var dx int
+		if i >= len(g) {
+			break
+		}
 		if f&2 != 0 {
 			dx = int(g[i])
 			i++
@@ -336,6 +339,9 @@ func parseGlyphPts(g []byte, contours int) ([][2]int, []bool, []int, error) {
 				dx = -dx
 			}
 		} else {
+			if i+2 > len(g) {
+				break
+			}
 			dx = int(int16(binary.BigEndian.Uint16(g[i : i+2])))
 			i += 2
 		}
@@ -348,6 +354,9 @@ func parseGlyphPts(g []byte, contours int) ([][2]int, []bool, []int, error) {
 	for p := 0; p < nPts; p++ {
 		f := flags[p]
 		var dy int
+		if i >= len(g) {
+			break
+		}
 		if f&4 != 0 {
 			dy = int(g[i])
 			i++
@@ -355,6 +364,9 @@ func parseGlyphPts(g []byte, contours int) ([][2]int, []bool, []int, error) {
 				dy = -dy
 			}
 		} else {
+			if i+2 > len(g) {
+				break
+			}
 			dy = int(int16(binary.BigEndian.Uint16(g[i : i+2])))
 			i += 2
 		}
