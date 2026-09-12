@@ -274,12 +274,21 @@ func (f *ttfFont) rasterGlyph(ch rune, px int) (w, h, adv int, alpha []byte) {
 	if err != nil {
 		return 0, 0, 0, nil
 	}
+	// y 翻转（字形 y-up → 屏幕 y-down）
+	for i := range pts {
+		pts[i][1] = yMax - pts[i][1]
+	}
+	yMin = 0
 	// 轮廓折线（二次贝塞尔扁平化）
 	polys := outlinePolys(pts, flags, endPts, scale, xMin, yMin)
-	// 扫描线非零填充
+	// 扫描线填充
 	alpha = fillPolys(polys, w, h, scale)
-	if f.advanceW > 0 {
-		adv = int(float64(f.advanceW) * scale)
+	// advance：hmtx 表（gid 项）
+	if int(gid)*4+2 <= len(f.hmtx) {
+		adv = int(float64(binary.BigEndian.Uint16(f.hmtx[int(gid)*4:int(gid)*4+2])) * scale)
+	}
+	if adv <= 0 {
+		adv = w + int(scale*120)
 	}
 	return w, h, adv, alpha
 }
@@ -338,6 +347,8 @@ func parseGlyphPts(g []byte, contours int) ([][2]int, []bool, []int, error) {
 			if f&16 == 0 {
 				dx = -dx
 			}
+		} else if f&16 != 0 {
+			dx = 0 // X_SAME：与上一点相同（无字节）
 		} else {
 			if i+2 > len(g) {
 				break
@@ -363,6 +374,8 @@ func parseGlyphPts(g []byte, contours int) ([][2]int, []bool, []int, error) {
 			if f&32 == 0 {
 				dy = -dy
 			}
+		} else if f&32 != 0 {
+			dy = 0 // Y_SAME：与上一点相同（无字节）
 		} else {
 			if i+2 > len(g) {
 				break
