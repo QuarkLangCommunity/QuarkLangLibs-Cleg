@@ -1,0 +1,60 @@
+// cleg Style v2 动画示例：关键帧（opacity + translate + scale + 颜色）+ transition 补间
+// 在 t=0/250/500/750/1000ms 各渲染一帧 → anim-0.png ... anim-1000.png（5 张）
+// 运行：examples/run.sh（需要 cleg.qk + json.qk + libclegrt.so 同目录）
+import "cleg";
+
+program main;
+
+fn mkFrame(int x, int y, int w, int h, String style) ClegFrame {
+    ClegFrame f = ClegFrame::new();
+    f.getStyle()["pos"] = x.toString() + "," + y.toString();
+    f.w = w;
+    f.h = h;
+    f.setStyle(style);
+    return f;
+}
+
+fn main(IOStream io) {
+    cleg::init(720, 420);
+    List<ClegNode> nodes = List::new();
+
+    // 静态参照：虚线框标出动画节点基准位置（translate/scale 的参照）
+    nodes.append(mkFrame(40, 60, 200, 120, `{"border-width":"1","border-style":"dashed","border-color":"#5a6a80","background-color":""}`));
+    // 静态标题
+    nodes.append(mkFrame(40, 20, 640, 26, `{"background-color":"#101828","border-radius":"6","text":"cleg animation: keyframes 0/250/500/750/1000ms","color":"#34d3eb","font-size":"13","text-align":"left","text-valign":"middle"}`));
+
+    // 关键帧动画节点：opacity + translate + scale + background-color
+    ClegFrame pulse = mkFrame(40, 60, 200, 120, `{"border-radius":"12","text":"PULSE","color":"#ffffff","font-size":"16","text-align":"center","text-valign":"middle","box-shadow":"6 8 14 2 #000000a0"}`);
+    pulse.getStyle()["animation"] = "pulse 1000ms ease-in-out 0ms 1 normal both";
+    nodes.append(pulse);
+
+    // transition 节点：t=500ms 时属性变化 → 500ms/400ms 补间
+    ClegFrame fade = mkFrame(300, 250, 160, 90, `{"background-color":"#2f6f4f","border-radius":"10","transform":"translate(0,0) scale(1)","transition":"background-color 500ms ease-out, transform 400ms linear","text":"transition","color":"#e6edf7","font-size":"12","text-align":"center","text-valign":"middle"}`);
+    nodes.append(fade);
+
+    ClegAnimator an = ClegAnimator::new();
+    an.define("pulse", `{"0":{"opacity":"1","transform":"translate(0,0) scale(1)","background-color":"#34d3eb"},"0.5":{"opacity":"0.35","transform":"translate(220,120) scale(1.5)","background-color":"#ff5f6d"},"1":{"opacity":"1","transform":"translate(0,0) scale(1)","background-color":"#34d3eb"}}`);
+
+    List<String> names = List::new();
+    names.append("anim-0.png");
+    names.append("anim-250.png");
+    names.append("anim-500.png");
+    names.append("anim-750.png");
+    names.append("anim-1000.png");
+
+    int i = 0;
+    while (i < 5) {
+        if (i == 2) {
+            // 属性变化 → transition 从当前值补间到新值
+            fade.getStyle()["background-color"] = "#ffc371";
+            fade.getStyle()["transform"] = "translate(120,60) scale(1.3)";
+        }
+        if (i == 0) { an.tick(nodes, 0); } else { an.tick(nodes, 250); }
+        clegrt.cleg_clear(12, 16, 26);
+        tick(nodes);
+        cleg::cleg_frame(names[i]);
+        io.println(names[i] + " opacity=" + clegstyle::get(pulse, "opacity", "") + " transform=" + clegstyle::get(pulse, "transform", "") + " bg=" + clegstyle::get(pulse, "background-color", ""));
+        i = i + 1;
+    }
+    io.println("5 frames written");
+}

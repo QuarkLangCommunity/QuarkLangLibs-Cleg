@@ -1,0 +1,114 @@
+/* 海洋主题 · 直接用 clegrt 原语渲染（Style v2 渲染能力直证）
+ * 产出 ocean-<t>ms.png：页面切换过冲回弹 + 胶囊按钮 hover/pressed + 进度条推进
+ */
+program main;
+
+library clegrt {
+    fn cleg_create(int w, int h) int;
+    fn cleg_gradient(int x, int y, int w, int h, int dir, int c1, int c2, int radius) int;
+    fn cleg_blend_rect(int x, int y, int w, int h, int argb, int alpha, int radius) int;
+    fn cleg_border(int x, int y, int w, int h, int wt, int wr, int wb, int wl, int ct, int cr, int cb, int cl, int radius, int style) int;
+    fn cleg_shadow(int x, int y, int w, int h, int dx, int dy, int blur, int spread, int argb, int inset, int radius) int;
+    fn cleg_text_ex(String text, int x, int y, int size, String font, int color, int align, int valign, int letter_spacing, int line_height, int decoration, int ellipsis, int max_w) int;
+    fn cleg_frame(String path) int;
+    fn cleg_clip_push(int x, int y, int w, int h) int;
+    fn cleg_clip_pop() int;
+}
+
+fn rgb(int r, int g, int b) int { return r * 65536 + g * 256 + b; }
+fn op(int rgbs) int { return -16777216 + rgbs; }                       // A=255
+fn al(int rgbs, int a) int { return (a - 256) * 16777216 + rgbs; }     // A=a
+
+fn easeOutBack1000(int t) int {
+    if (t <= 0) { return 0; }
+    if (t >= 1000) { return 1000; }
+    int u = t - 1000;
+    int u2 = u * u / 1000;
+    int u3 = u2 * u / 1000;
+    return 1000 + 2702 * u3 / 1000 + 1702 * u2 / 1000;
+}
+
+fn pill(int x, int y, int w, int h, int rgbs, int alpha, int pressed) void {
+    clegrt.cleg_shadow(x, y + 4, w, h, 0, 8, 16, 0, al(rgb(4, 20, 28), 150), 0, h / 2);
+    if (pressed == 1) {
+        clegrt.cleg_gradient(x, y, w, h, 1, al(rgb(22, 140, 134), alpha), al(rgb(7, 32, 44), alpha), h / 2);
+    } else {
+        clegrt.cleg_gradient(x, y, w, h, 1, al(rgbs, alpha), al(rgb(7, 32, 44), alpha), h / 2);
+    }
+    clegrt.cleg_border(x, y, w, h, 0, 0, 0, 0, 0, 0, 0, 0, h / 2, 0);
+}
+
+fn main(IOStream io) {
+    clegrt.cleg_create(880, 520);
+
+    int deep = rgb(7, 32, 44);
+    int sea = rgb(14, 58, 79);
+    int panel = rgb(18, 71, 94);
+    int foam = rgb(230, 247, 249);
+    int mist = rgb(159, 212, 222);
+    int aqua = rgb(31, 182, 174);
+    int aquaLit = rgb(63, 224, 208);
+    int coral = rgb(255, 122, 89);
+
+    List<int> times = [0, 120, 240, 380, 560, 760];
+    int i = 0;
+    while (i < times.size()) {
+        int t = times[i];
+        int p = t * 1000 / 560;
+        if (p > 1000) { p = 1000; }
+        int e = easeOutBack1000(p);
+
+        // 窗口：深海渐变 + 圆角 + 边框 + 阴影
+        clegrt.cleg_shadow(20, 30, 840, 460, 0, 18, 44, 0, al(rgb(4, 20, 28), 200), 0, 22);
+        clegrt.cleg_gradient(20, 20, 840, 460, 2, op(sea), op(deep), 22);
+        clegrt.cleg_border(20, 20, 840, 460, 1, 1, 1, 1, op(rgb(27, 84, 104)), op(rgb(27, 84, 104)), op(rgb(27, 84, 104)), op(rgb(27, 84, 104)), 22, 0);
+
+        // 侧栏
+        clegrt.cleg_blend_rect(44, 120, 190, 336, op(rgb(12, 50, 67)), 255, 18);
+
+        // 标题
+        clegrt.cleg_text_ex("海洋控制台", 64, 40, 24, "Noto Sans CJK SC", op(foam), 0, 1, 2, 0, 0, 0, 0);
+        clegrt.cleg_text_ex("ocean theme style v2", 66, 74, 13, "Noto Sans CJK SC", op(mist), 0, 1, 1, 0, 0, 0, 0);
+
+        // 导航胶囊（hover 在 t=240，pressed 在 t=380）
+        int b2bg = aqua;
+        int b2press = 0;
+        if (t == 240) { b2bg = aquaLit; }
+        if (t >= 380 && t < 560) { b2bg = rgb(22, 140, 134); b2press = 1; }
+        if (t >= 560) { b2bg = coral; }
+        pill(64, 148, 150, 46, b2bg, 255, b2press);
+        clegrt.cleg_text_ex("概览", 64, 148, 15, "", op(rgb(4, 34, 43)), 1, 1, 1, 46, 0, 0, 150);
+        pill(64, 208, 150, 46, rgb(21, 92, 110), 255, 0);
+        clegrt.cleg_text_ex("数据", 64, 208, 15, "", op(foam), 1, 1, 1, 46, 0, 0, 150);
+        pill(64, 268, 150, 46, rgb(21, 92, 110), 255, 0);
+        clegrt.cleg_text_ex("设置", 64, 268, 15, "", op(foam), 1, 1, 1, 46, 0, 0, 150);
+
+        // 内容页：过冲回弹（位移 + 缩放 + 透明度）
+        int pw = 596 + e * 16 / 1000;          // 缩放近似
+        int ph = 336 + e * 10 / 1000;
+        int px = 274 + (1000 - e) * 120 / 1000 - 8;
+        int py = 120 - e * 6 / 1000;
+        int pa = e * 235 / 1000 + 20;          // 20..255 透明度
+        clegrt.cleg_shadow(px, py + 6, pw, ph, 0, 10, 26, 0, al(rgb(4, 20, 28), 150), 0, 20);
+        clegrt.cleg_gradient(px, py, pw, ph, 0, al(panel, pa), al(rgb(14, 63, 85), pa), 20);
+        clegrt.cleg_border(px, py, pw, ph, 1, 1, 1, 1, al(rgb(30, 90, 115), pa), al(rgb(30, 90, 115), pa), al(rgb(30, 90, 115), pa), al(rgb(30, 90, 115), pa), 20, 0);
+        clegrt.cleg_clip_push(px + 2, py + 2, pw - 4, ph - 4);
+        clegrt.cleg_text_ex("数据", px + 36, py + 34, 28, "", al(foam, pa), 0, 1, 0, 0, 0, 0, 0);
+        clegrt.cleg_text_ex("页面切换：过冲 → 回弹 → 稳定", px + 38, py + 86, 15, "", al(mist, pa), 0, 1, 1, 0, 0, 0, 0);
+        clegrt.cleg_clip_pop();
+
+        // 进度条：圆角轨道 + chunk
+        int trackX = px + 38;
+        int trackY = py + 150;
+        clegrt.cleg_blend_rect(trackX, trackY, 520, 14, op(rgb(10, 42, 56)), 255, 7);
+        int fill = 120 + t / 2;
+        if (fill > 520) { fill = 520; }
+        clegrt.cleg_gradient(trackX, trackY, fill, 14, 0, op(aqua), op(aquaLit), 7);
+
+        String name = "ocean-" + t.toString() + "ms.png";
+        clegrt.cleg_frame(name);
+        io.println(name);
+        i = i + 1;
+    }
+    io.println("ocean direct ok");
+}

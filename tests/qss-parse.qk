@@ -1,0 +1,55 @@
+import "cleg";
+
+program main;
+
+fn chk(IOStream io, String name, bool cond) void {
+    if (cond) { io.println("OK " + name); } else { io.println("FAIL " + name); }
+}
+
+fn main(IOStream io) {
+    chk(io, "box4-1", qss::box4("2")[0] == 2 && qss::box4("2")[1] == 2 && qss::box4("2")[2] == 2 && qss::box4("2")[3] == 2);
+    chk(io, "box4-2", qss::box4("2,4")[0] == 2 && qss::box4("2,4")[1] == 4 && qss::box4("2,4")[2] == 2 && qss::box4("2,4")[3] == 4);
+    chk(io, "box4-3", qss::box4("1,2,3")[0] == 1 && qss::box4("1,2,3")[1] == 2 && qss::box4("1,2,3")[2] == 3 && qss::box4("1,2,3")[3] == 2);
+    chk(io, "box4-4", qss::box4("1,2,3,4")[0] == 1 && qss::box4("1,2,3,4")[1] == 2 && qss::box4("1,2,3,4")[2] == 3 && qss::box4("1,2,3,4")[3] == 4);
+    chk(io, "box4-px", qss::box4("4px, 8px")[0] == 4 && qss::box4("4px, 8px")[1] == 8);
+    chk(io, "color-hex3", qss::color("#f00") == 16711680 - 16777216);
+    chk(io, "color-hex6", qss::color("#00ff00") == 65280 - 16777216);
+    chk(io, "color-hex8", qss::cA(qss::color("#800000ff")) == 128);
+    chk(io, "color-rgb", qss::color("rgb(1,2,3)") == 66051 - 16777216);
+    chk(io, "color-rgba", qss::cA(qss::color("rgba(1,2,3,0.5)")) == 128);
+    chk(io, "color-name", qss::color("red") == 16711680 - 16777216);
+    chk(io, "color-legacy", qss::cR(qss::color("52,211,235")) == 52 && qss::cG(qss::color("52,211,235")) == 211);
+    StyleGradient g = qss::gradient("linear(180,#ff0000,0,#0000ff,100)");
+    chk(io, "grad-linear", g.kind == 1 && g.angle == 180 && qss::cR(g.c1) == 255 && qss::cB(g.c2) == 255);
+    StyleGradient g2 = qss::gradient("radial(50,50,60,#fff,#000)");
+    chk(io, "grad-radial", g2.kind == 2 && g2.r == 60);
+    StyleTransform t = qss::transform("translate(10,20) scale(1.5) rotate(45)");
+    chk(io, "tf", t.hasT == 1 && t.dx == 10 && t.dy == 20 && t.sxn == 1500 && t.hasS == 1 && t.hasR == 1 && t.rot == 45);
+    chk(io, "ease-linear", qss::ease("linear", 0.5) == 0.5);
+    chk(io, "ease-in-end", qss::ease("ease-in", 0.0) == 0.0 && qss::ease("ease-in", 1.0) == 1.0);
+    float eb = qss::ease("cubic-bezier(0,0,1,1)", 0.5);
+    chk(io, "ease-bezier", eb > 0.49 && eb < 0.51);
+    chk(io, "ease-steps", qss::ease("steps(4)", 0.6) == 0.5);
+    chk(io, "time-ms", qss::time("200ms") == 200);
+    chk(io, "time-s", qss::time("0.3s") == 300);
+    List<String> tr = qss::transitions("opacity 200ms ease-out, transform 1s linear 100ms");
+    chk(io, "trans-count", tr.size() == 2);
+    chk(io, "trans-1", tr[0] == "opacity|200|ease-out|0");
+    chk(io, "trans-2", tr[1] == "transform|1000|linear|100");
+    chk(io, "anim-short", qss::animationParts("pulse 1s ease-in-out 200ms infinite alternate both") == "pulse|1000|ease-in-out|200|infinite|alternate|both");
+    List<String> fr = qss::frames("{\"0\":{\"opacity\":\"1\",\"transform\":\"scale(1)\"},\"0.5\":{\"opacity\":\"0.4\",\"transform\":\"scale(1.2)\"},\"1\":{\"opacity\":\"1\",\"transform\":\"scale(1)\"}}");
+    chk(io, "frames-count", fr.size() == 3);
+    chk(io, "frame-0", qss::frameTime(fr[0]) == 0.0);
+    chk(io, "frame-mid", qss::frameTime(fr[1]) == 0.5);
+    chk(io, "frame-props", qss::propGet(qss::frameProps(fr[1]), "opacity") == "0.4");
+    chk(io, "interp-color", qss::interpColor("0,0,0", "255,255,255", 0.5) == "128,128,128");
+    chk(io, "interp-num", qss::interpValue("opacity", "1", "0.4", 0.5) == "0.7");
+    chk(io, "interp-len", qss::interpValue("width", "10", "20", 0.5) == "15");
+    chk(io, "interp-tf", qss::interpValue("transform", "translate(0,0) scale(1)", "translate(10,20) scale(2)", 0.5) == "translate(5,10) scale(1.5,1.5)");
+    chk(io, "extract", qss::extractBlock("{\"ClegButton\": {\"color\": \"red\"}}", "ClegButton") == "\"color\": \"red\"");
+    List<String> pr = qss::jsonPairs("\"color\": \"red\", \"font-size\": 12");
+    chk(io, "pairs", pr.size() == 2 && qss::pairKey(pr[0]) == "color" && qss::pairVal(pr[0]) == "red" && qss::pairVal(pr[1]) == "12");
+    chk(io, "fontUnit", qss::fontSize("9pt") == 12 && qss::fontSize("16px") == 16);
+    chk(io, "lineH", qss::lineHeightPx("1.4", 10) == 14 && qss::lineHeightPx("20px", 10) == 20);
+    chk(io, "same", qss::sameValue("opacity", "1.0", "1") && !qss::sameValue("opacity", "1", "0.5"));
+}

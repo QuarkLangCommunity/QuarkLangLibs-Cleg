@@ -6,8 +6,10 @@ package main
 
 import (
 	"encoding/binary"
+	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -16,8 +18,9 @@ type ttfFont struct {
 	data       []byte
 	numGlyphs  int
 	unitsPerEm int
-	cmap4      []byte // format 4 段解析用
+	cmap4      []byte // 主 cmap 子表（format 4 或 12）
 	cmap4Data  []byte
+	cmapAlt    []byte // 次选 cmap 子表（主表未命中时回落）
 	cmap4Sub   uint16
 	locafmt    byte // 0=short 1=long（head.indexToLocFormat）
 	loca       []byte
@@ -26,7 +29,9 @@ type ttfFont struct {
 	hmtx       []byte
 	advanceW   uint16
 	headOff    int
-	name       string
+	name       string // 字体全名（nameID 4）
+	family     string // 字体族名（nameID 1/16）
+	path       string // 来源文件路径（调试/日志）
 }
 
 var ttfCacheMu sync.Mutex
@@ -34,40 +39,94 @@ var ttfCache = map[string]*ttfFont{}
 
 func tag(b []byte, i int) string { return string(b[i : i+4]) }
 
-func parseTTF(data []byte) (*ttfFont, error) {
+// sfntFaceOffset 返回 sfnt 数据起点：普通 .ttf/.otf → 0；TTC/OTC（ttcf）→ 第 0 个 face 偏移。
+func sfntFaceOffset(data []byte) (int, error) {
 	if len(data) < 12 {
+		return 0, os.ErrInvalid
+	}
+	if string(data[0:4]) != "ttcf" {
+		return 0, nil
+	}
+	if len(data) < 16 {
+		return 0, os.ErrInvalid
+	}
+	n := int(binary.BigEndian.Uint32(data[8:12]))
+	if n <= 0 || len(data) < 12+4*n {
+		return 0, os.ErrInvalid
+	}
+	base := int(binary.BigEndian.Uint32(data[12:16]))
+	if base <= 0 || base+12 > len(data) {
+		return 0, os.ErrInvalid
+	}
+	return base, nil
+}
+
+// parseTTF 解析 sfnt（.ttf/.otf）或 TrueType Collection（.ttc/.otc，取第 0 个 face）。
+// TTC 的表偏移规范为"文件绝对"，个别字体为"相对 face"，用 head 魔数兜底二选一。
+func parseTTF(data []byte) (*ttfFont, error) {
+	base, err := sfntFaceOffset(data)
+	if err != nil {
+		return nil, err
+	}
+	f, err := parseTTFAt(data, base, false)
+	if err == nil {
+		return f, nil
+	}
+	if base > 0 {
+		if f2, err2 := parseTTFAt(data, base, true); err2 == nil {
+			return f2, nil
+		}
+	}
+	return nil, err
+}
+
+func parseTTFAt(data []byte, base int, relOffsets bool) (*ttfFont, error) {
+	if base < 0 || base+12 > len(data) {
 		return nil, os.ErrInvalid
 	}
 	f := &ttfFont{data: data}
+	numTables := int(binary.BigEndian.Uint16(data[base+4 : base+6]))
+	if numTables <= 0 || base+12+16*numTables > len(data) {
+		return nil, os.ErrInvalid
+	}
+	adj := func(off int) int {
+		if relOffsets {
+			return base + off
+		}
+		return off
+	}
 	var cmapOff, locaOff, glyfOff, hmtxOff, headOff, maxpOff, nameOff, hheaOff int
 	var locaLen int
-	numTables := int(binary.BigEndian.Uint16(data[4:6]))
 	for i := 0; i < numTables; i++ {
-		rec := 12 + i*16
-		if rec+16 > len(data) {
-			return nil, os.ErrInvalid
-		}
+		rec := base + 12 + i*16
 		switch tag(data, rec) {
 		case "cmap":
-			cmapOff = int(binary.BigEndian.Uint32(data[rec+8 : rec+12]))
+			cmapOff = adj(int(binary.BigEndian.Uint32(data[rec+8 : rec+12])))
 		case "loca":
-			locaOff = int(binary.BigEndian.Uint32(data[rec+8 : rec+12]))
+			locaOff = adj(int(binary.BigEndian.Uint32(data[rec+8 : rec+12])))
 			locaLen = int(binary.BigEndian.Uint32(data[rec+12 : rec+16]))
 		case "glyf":
-			glyfOff = int(binary.BigEndian.Uint32(data[rec+8 : rec+12]))
+			glyfOff = adj(int(binary.BigEndian.Uint32(data[rec+8 : rec+12])))
 		case "hmtx":
-			hmtxOff = int(binary.BigEndian.Uint32(data[rec+8 : rec+12]))
+			hmtxOff = adj(int(binary.BigEndian.Uint32(data[rec+8 : rec+12])))
 		case "head":
-			headOff = int(binary.BigEndian.Uint32(data[rec+8 : rec+12]))
+			headOff = adj(int(binary.BigEndian.Uint32(data[rec+8 : rec+12])))
 		case "maxp":
-			maxpOff = int(binary.BigEndian.Uint32(data[rec+8 : rec+12]))
+			maxpOff = adj(int(binary.BigEndian.Uint32(data[rec+8 : rec+12])))
 		case "name":
-			nameOff = int(binary.BigEndian.Uint32(data[rec+8 : rec+12]))
+			nameOff = adj(int(binary.BigEndian.Uint32(data[rec+8 : rec+12])))
 		case "hhea":
-			hheaOff = int(binary.BigEndian.Uint32(data[rec+8 : rec+12]))
+			hheaOff = adj(int(binary.BigEndian.Uint32(data[rec+8 : rec+12])))
 		}
 	}
 	if cmapOff == 0 || glyfOff == 0 || locaOff == 0 || headOff == 0 || maxpOff == 0 || hmtxOff == 0 || hheaOff == 0 {
+		return nil, os.ErrInvalid
+	}
+	// 结构校验（head 魔数 0x5F0F3CF5）：既防垃圾数据，也用于 TTC 偏移解释二选一。
+	if headOff+54 > len(data) || binary.BigEndian.Uint32(data[headOff+12:headOff+16]) != 0x5F0F3CF5 {
+		return nil, os.ErrInvalid
+	}
+	if maxpOff+6 > len(data) || cmapOff+4 > len(data) || glyfOff >= len(data) || locaOff >= len(data) || hmtxOff > len(data) {
 		return nil, os.ErrInvalid
 	}
 	f.headOff = headOff
@@ -82,9 +141,13 @@ func parseTTF(data []byte) (*ttfFont, error) {
 	f.loca = data[locaOff:]
 	f.glyf = data[glyfOff:]
 	f.hmtx = data[hmtxOff:]
-	// cmap：选 format 4 或 12（platform 3 enc 1/10 优先）
+	// cmap：选 format 4 或 12。旧实现把"编码 ID"当"平台 ID"比对（要求 encoding==3），
+	// 于是 platform 3/enc 1（BMP）与 3/10（完整 Unicode）这类标准子表全被丢弃，
+	// Droid Sans Fallback 等字体直接解析失败。现按平台优先 + format 优先排序。
 	best := -1
-	var bestFmt int
+	bestKey := 0
+	alt := -1
+	altKey := 0
 	nSub := int(binary.BigEndian.Uint16(data[cmapOff+2 : cmapOff+4]))
 	for i := 0; i < nSub; i++ {
 		rec := cmapOff + 4 + i*8
@@ -97,11 +160,27 @@ func parseTTF(data []byte) (*ttfFont, error) {
 			continue
 		}
 		format := int(binary.BigEndian.Uint16(data[start : start+2]))
-		if (format == 4 || format == 12) && int(binary.BigEndian.Uint16(data[rec+2:rec+4])) == 3 {
-			if format > bestFmt {
-				bestFmt = format
-				best = start
-			}
+		if format != 4 && format != 12 {
+			continue
+		}
+		pid := binary.BigEndian.Uint16(data[rec : rec+2])
+		eid := binary.BigEndian.Uint16(data[rec+2 : rec+4])
+		score := 0
+		switch {
+		case pid == 3 && (eid == 10 || eid == 1):
+			score = 2 // Windows Unicode（完整 / BMP）
+		case pid == 0:
+			score = 1 // Unicode 平台
+		}
+		if score == 0 {
+			continue
+		}
+		key := score*100 + format
+		if key > bestKey {
+			altKey, alt = bestKey, best
+			bestKey, best = key, start
+		} else if key > altKey {
+			altKey, alt = key, start
 		}
 	}
 	if best < 0 {
@@ -109,49 +188,101 @@ func parseTTF(data []byte) (*ttfFont, error) {
 	}
 	f.cmap4Data = data[best:]
 	f.cmap4 = data[best:]
-	// 字体名（平台 3 英语 nameID=1）
+	if alt >= 0 {
+		f.cmapAlt = data[alt:]
+	}
+	// 字体内部名（family/full；平台 3 为 UTF-16BE，需解码——否则族名匹配永远失配）
 	if nameOff > 0 {
-		f.name = ttfName(data, nameOff)
+		f.family, f.name = ttfNames(data, nameOff)
 	}
 	return f, nil
 }
 
-func ttfName(data []byte, nameOff int) string {
+// ttfDecodeName name 表字符串解码：平台 3/0 为 UTF-16BE，其它按 Latin-1 直读。
+func ttfDecodeName(b []byte, pid uint16) string {
+	if pid != 3 && pid != 0 {
+		return string(b)
+	}
+	var sb strings.Builder
+	for i := 0; i+1 < len(b); i += 2 {
+		r := rune(binary.BigEndian.Uint16(b[i : i+2]))
+		if r == 0 {
+			continue
+		}
+		sb.WriteRune(r)
+	}
+	return sb.String()
+}
+
+// ttfNames 取字体内部名：family（nameID 1，排版族名 16 优先）与 full（nameID 4）。
+func ttfNames(data []byte, nameOff int) (family, full string) {
+	if nameOff <= 0 || nameOff+6 > len(data) {
+		return "", ""
+	}
 	n := int(binary.BigEndian.Uint16(data[nameOff+2 : nameOff+4]))
 	strOff := nameOff + int(binary.BigEndian.Uint16(data[nameOff+4:nameOff+6]))
 	for i := 0; i < n; i++ {
 		rec := nameOff + 6 + i*12
 		if rec+12 > len(data) {
-			return ""
+			break
 		}
 		pid := binary.BigEndian.Uint16(data[rec : rec+2])
 		nameID := binary.BigEndian.Uint16(data[rec+6 : rec+8])
 		l := int(binary.BigEndian.Uint16(data[rec+8 : rec+10]))
 		off := int(binary.BigEndian.Uint16(data[rec+10 : rec+12]))
-		if pid == 3 && nameID == 1 && strOff+off+l <= len(data) {
-			return string(data[strOff+off : strOff+off+l])
+		if l == 0 || strOff+off+l > len(data) {
+			continue
+		}
+		s := ttfDecodeName(data[strOff+off:strOff+off+l], pid)
+		if s == "" {
+			continue
+		}
+		switch nameID {
+		case 1:
+			if family == "" {
+				family = s
+			}
+		case 16:
+			family = s // 排版族名优先
+		case 4:
+			if full == "" {
+				full = s
+			}
 		}
 	}
-	return ""
+	return family, full
 }
 
-// glyphIndex cmap 查字符→glyph（format 4 或 12）。
+// glyphIndex cmap 查字符→glyph：主选子表未命中时回落次选子表。
+// 有的字体（如 Droid Sans Fallback）format 12 子表只覆盖 CJK 稀疏段，
+// ASCII 只在 format 4 子表里——只认一个子表会得到 .notdef（渲染成空心方框）。
 func (f *ttfFont) glyphIndex(ch rune) uint32 {
-	if ch > 0xFFFF {
-		return f.glyphIndex12(uint32(ch))
+	if gid := glyphIndexIn(f.cmap4, ch); gid != 0 {
+		return gid
 	}
-	if len(f.cmap4) >= 4 {
-		format := binary.BigEndian.Uint16(f.cmap4[:2])
-		if format == 12 {
-			return f.glyphIndex12(uint32(ch))
-		}
-		return f.glyphIndex4(uint16(ch))
+	if len(f.cmapAlt) > 0 {
+		return glyphIndexIn(f.cmapAlt, ch)
 	}
 	return 0
 }
 
-func (f *ttfFont) glyphIndex4(ch uint16) uint32 {
-	d := f.cmap4
+func glyphIndexIn(d []byte, ch rune) uint32 {
+	if len(d) < 4 {
+		return 0
+	}
+	switch binary.BigEndian.Uint16(d[:2]) {
+	case 12:
+		return glyphIndex12In(d, uint32(ch))
+	case 4:
+		if ch > 0xFFFF {
+			return 0
+		}
+		return glyphIndex4In(d, uint16(ch))
+	}
+	return 0
+}
+
+func glyphIndex4In(d []byte, ch uint16) uint32 {
 	if len(d) < 14 {
 		return 0
 	}
@@ -184,8 +315,7 @@ func (f *ttfFont) glyphIndex4(ch uint16) uint32 {
 	return 0
 }
 
-func (f *ttfFont) glyphIndex12(ch uint32) uint32 {
-	d := f.cmap4
+func glyphIndex12In(d []byte, ch uint32) uint32 {
 	if len(d) < 16 {
 		return 0
 	}
@@ -309,10 +439,15 @@ func parseGlyphPts(g []byte, contours int) ([][2]int, []bool, []int, error) {
 		nPts = endPts[contours-1] + 1
 	}
 	if i+2 <= len(g) {
+		// instructionLength 是"指令字节数"，跳过 2 + ins 字节（旧实现误乘 2，
+		// 导致 flags 起点整体偏移、坐标流全错）。
 		ins := int(binary.BigEndian.Uint16(g[i : i+2]))
-		i += 2 + ins*2
+		i += 2 + ins
 	}
-	// flags 段只出现一次（repeat 扩展）；x 与 y 数据随后各自按 flags 解码
+	// flags 段只出现一次（repeat 扩展）；x 与 y 数据随后各自按 flags 解码。
+	// REPEAT_FLAG = 0x08：置位时"紧随其后的一字节"是重复次数 count，
+	// 该 flag 共出现 count+1 次（旧实现误按低 3 位/位移取次数，
+	// 使 flag 流与 x/y 字节流失步，大量字形轮廓变空）。
 	flags := make([]byte, nPts)
 	for p := 0; p < nPts; {
 		if i >= len(g) {
@@ -320,7 +455,14 @@ func parseGlyphPts(g []byte, contours int) ([][2]int, []bool, []int, error) {
 		}
 		f := g[i]
 		i++
-		rep := int(f>>3) & 7
+		rep := 0
+		if f&0x08 != 0 {
+			if i >= len(g) {
+				break
+			}
+			rep = int(g[i])
+			i++
+		}
 		flags[p] = f
 		p++
 		for k := 0; k < rep && p < nPts; k++ {
@@ -410,51 +552,59 @@ func outlinePolys(pts [][2]int, flags []bool, endPts []int, scale float64, xMin,
 	return polys
 }
 
+// flattenContour 单个轮廓 → 折线（二次贝塞尔按 8 段扁平化）。
+// TrueType 允许连续 off-curve 点：两点之间隐含一个 on-curve 中点，
+// 必须以"当前点 cur"贯穿推进。旧实现遇到连续 off-curve 时把下一段的起点
+// 取成轮廓起点（seq[0]），导致轮廓自交、字腔被填死或笔画错乱。
 func flattenContour(pts [][2]int, flags []bool, start, end int, scale float64, xMin, yMin int) [][4]float64 {
 	n := end - start + 1
 	if n < 2 {
 		return nil
 	}
-	seq := make([]int, n)
-	for i := 0; i < n; i++ {
-		seq[i] = start + i
+	at := func(k int) [2]int { return pts[start+((k%n)+n)%n] }
+	on := func(k int) bool { return flags[start+((k%n)+n)%n] }
+
+	// 起点 cur：首点 on → 用它；否则末点 on → 用末点；否则用首末中点。
+	var cur [2]int
+	k0 := 0
+	switch {
+	case on(0):
+		cur = at(0)
+		k0 = 1
+	case on(n - 1):
+		cur = at(n - 1)
+	default:
+		a, b := at(n-1), at(0)
+		cur = [2]int{(a[0] + b[0]) / 2, (a[1] + b[1]) / 2}
 	}
+	first := cur
+
 	var poly [][4]float64
-	prevOn := -1
-	prevOff := -1
-	for _, idx := range seq {
-		p := pts[idx]
-		if flags[idx] {
-			if prevOff >= 0 {
-				p0 := pts[seq[0]]
-				if prevOn >= 0 {
-					p0 = pts[prevOn]
-				}
-				poly = append(poly, quadBez(p0, pts[prevOff], p, scale, xMin, yMin)...)
-				prevOff = -1
+	poly = append(poly, toF(cur, scale, xMin, yMin))
+	pending := false
+	var ctrl [2]int
+	for done, k := 0, k0; done < n; done, k = done+1, k+1 {
+		p := at(k)
+		if on(k) {
+			if pending {
+				poly = append(poly, quadBez(cur, ctrl, p, scale, xMin, yMin)...)
+				pending = false
 			} else {
 				poly = append(poly, toF(p, scale, xMin, yMin))
 			}
-			prevOn = idx
-		} else {
-			if prevOff >= 0 {
-				mid := [2]int{(pts[prevOff][0] + p[0]) / 2, (pts[prevOff][1] + p[1]) / 2}
-				p0 := pts[seq[0]]
-				if prevOn >= 0 {
-					p0 = pts[prevOn]
-				}
-				poly = append(poly, quadBez(p0, pts[prevOff], mid, scale, xMin, yMin)...)
-				prevOn = -1
-			}
-			prevOff = idx
+			cur = p
+			continue
 		}
+		if pending { // 连续 off-curve：以中点收段，并把中点作为下一段起点
+			mid := [2]int{(ctrl[0] + p[0]) / 2, (ctrl[1] + p[1]) / 2}
+			poly = append(poly, quadBez(cur, ctrl, mid, scale, xMin, yMin)...)
+			cur = mid
+		}
+		ctrl = p
+		pending = true
 	}
-	if prevOff >= 0 {
-		p0 := pts[seq[0]]
-		if prevOn >= 0 {
-			p0 = pts[prevOn]
-		}
-		poly = append(poly, quadBez(p0, pts[prevOff], pts[seq[0]], scale, xMin, yMin)...)
+	if pending { // 闭合回起点
+		poly = append(poly, quadBez(cur, ctrl, first, scale, xMin, yMin)...)
 	}
 	return poly
 }
@@ -502,12 +652,32 @@ func fillPolys(polys [][][4]float64, w, h int, scale float64) []byte {
 				xs[j], xs[j-1] = xs[j-1], xs[j]
 			}
 		}
+		// 奇偶填充 + 水平抗锯齿：像素 x 覆盖 [x,x+1)，覆盖率 = 区间与像素的交集长度。
+		// 旧实现取 int(a-0.5)..int(b+0.5) 两端各外扩约 1px，会把窄字腔（如 o/m 的内孔）
+		// 整个吃掉，且完全没有抗锯齿。
 		for i := 0; i+1 < len(xs); i += 2 {
-			x0 := int(xs[i] - 0.5)
-			x1 := int(xs[i+1] + 0.5)
+			a, b := xs[i], xs[i+1]
+			if b <= a {
+				continue
+			}
+			x0 := int(math.Floor(a))
+			x1 := int(math.Floor(b))
 			for x := x0; x <= x1; x++ {
-				if x >= 0 && x < w && y >= 0 && y < h {
-					alpha[y*w+x] = 255
+				if x < 0 || x >= w || y < 0 || y >= h {
+					continue
+				}
+				cov := math.Min(b, float64(x+1)) - math.Max(a, float64(x))
+				if cov <= 0 {
+					continue
+				}
+				v := byte(0)
+				if cov >= 1 {
+					v = 255
+				} else {
+					v = byte(cov*255 + 0.5)
+				}
+				if v > alpha[y*w+x] {
+					alpha[y*w+x] = v
 				}
 			}
 		}
@@ -519,7 +689,9 @@ func fillPolys(polys [][][4]float64, w, h int, scale float64) []byte {
 var fontRoots = func() []string {
 	var r []string
 	if os.PathSeparator == '/' {
-		r = []string{"/usr/share/fonts", "/usr/local/share/fonts", filepath.Join(os.Getenv("HOME"), ".fonts")}
+		home := os.Getenv("HOME")
+		r = []string{"/usr/share/fonts", "/usr/local/share/fonts",
+			filepath.Join(home, ".fonts"), filepath.Join(home, ".local", "share", "fonts")}
 		if _, err := os.Stat("/System/Library/Fonts"); err == nil {
 			r = append(r, "/System/Library/Fonts", "/Library/Fonts")
 		}
@@ -534,15 +706,16 @@ var fontRoots = func() []string {
 }()
 
 var fontIndexOnce sync.Once
-var fontIndex []string // 所有候选 .ttf/.otf 路径（含目录惰性扫描）
+var fontIndex []string // 所有候选字体路径（启动时递归扫描一次并缓存）
 
+// fontIndexAll 递归扫描系统字体目录，收集 .ttf/.otf/.ttc/.otc（零系统依赖，纯文件系统扫描）。
 func fontIndexAll() []string {
 	fontIndexOnce.Do(func() {
 		for _, root := range fontRoots {
 			_ = filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
 				if err == nil && !info.IsDir() {
 					ext := strings.ToLower(filepath.Ext(p))
-					if ext == ".ttf" || ext == ".otf" || strings.Contains(filepath.Base(p), ".ttc") {
+					if ext == ".ttf" || ext == ".otf" || ext == ".ttc" || ext == ".otc" {
 						fontIndex = append(fontIndex, p)
 					}
 				}
@@ -553,30 +726,151 @@ func fontIndexAll() []string {
 	return fontIndex
 }
 
-// loadFont 加载字名（回退链单项）。
+// sniffGlyf 只读文件头判断字体是否含 glyf（TrueType 轮廓）。
+// .otf/.ttc 中大量是 CFF/CFF2 轮廓（本光栅器不支持），先嗅探可避免为解析失败整文件读取。
+func sniffGlyf(path string) bool {
+	fh, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer fh.Close()
+	buf := make([]byte, 8192)
+	n, _ := fh.ReadAt(buf, 0)
+	if n < 12 {
+		return false
+	}
+	buf = buf[:n]
+	base := 0
+	if string(buf[0:4]) == "ttcf" {
+		if n < 16 {
+			return false
+		}
+		base = int(binary.BigEndian.Uint32(buf[12:16]))
+		if base <= 0 || base+12 > n {
+			return false
+		}
+	}
+	numTables := int(binary.BigEndian.Uint16(buf[base+4 : base+6]))
+	if numTables <= 0 || base+12+16*numTables > n {
+		return false
+	}
+	for i := 0; i < numTables; i++ {
+		if string(buf[base+12+i*16:base+12+i*16+4]) == "glyf" {
+			return true
+		}
+	}
+	return false
+}
+
+// loadFont 加载字名（回退链单项）：文件名匹配 →（CJK 名）候选内部族名匹配 → CJK 候选链。
 func loadFont(name string, px int) (*ttfFont, error) {
 	name = normalizeFontName(name)
 	ttfCacheMu.Lock()
-	defer ttfCacheMu.Unlock()
-	key := name + "|" + itoa(px)
-	if f, ok := ttfCache[key]; ok {
+	if f, ok := ttfCache[name+"|"+itoa(px)]; ok {
+		ttfCacheMu.Unlock()
 		return f, nil
 	}
-	for _, p := range fontIndexAll() {
-		base := normalizeFontName(strings.TrimSuffix(strings.TrimSuffix(filepath.Base(p), filepath.Ext(p)), ""))
-		if strings.Contains(base, name) || strings.Contains(name, base) {
-			data, err := os.ReadFile(p)
-			if err != nil {
-				continue
-			}
-			f, err := parseTTF(data)
-			if err == nil {
-				ttfCache[key] = f
+	ttfCacheMu.Unlock()
+	if name == "" {
+		return nil, os.ErrNotExist
+	}
+	// 0) 通用族名（QSS/CSS 的 monospace/sans-serif/serif…）→ 具体族名候选。
+	//    否则 qk 侧默认链 "monospace" 会一路落到内置 5x7 位图（该表有空洞，表现为丢字）。
+	if alts, ok := genericFontAliases[name]; ok {
+		for _, alt := range alts {
+			if f, err := loadFont(alt, px); err == nil {
 				return f, nil
 			}
 		}
 	}
+	// 1) 文件名匹配（既有行为 + 风格偏好：未显式要求 bold/italic 时优先 Regular/Book，
+	//    否则同一族会随机命中 Bold/Black/Italic 变体，观感与度量都不对）
+	if !isCJKName(name) {
+		bestPath, bestPenalty := "", 1<<30
+		for _, p := range fontIndexAll() {
+			base := normalizeFontName(strings.TrimSuffix(filepath.Base(p), filepath.Ext(p)))
+			if base == "" {
+				continue
+			}
+			if !strings.Contains(base, name) && !strings.Contains(name, base) {
+				continue
+			}
+			if pen := fontStylePenalty(name, base); pen < bestPenalty {
+				bestPenalty, bestPath = pen, p
+			}
+		}
+		if bestPath != "" {
+			if f, err := loadFontFile(bestPath, px); err == nil {
+				return f, nil
+			}
+		}
+		return nil, os.ErrNotExist
+	}
+	// 2) CJK 族名：候选集很小，逐个比对内部族名/全名（.ttc 文件名常与族名不一致）
+	for _, p := range cjkFontPaths() {
+		if f, err := loadFontFile(p, px); err == nil && fontNameMatches(f, name) {
+			return f, nil
+		}
+	}
+	// 3) 仍无 → 取任意可用 CJK 字体，保证 CJK 文本可渲染
+	if f := loadCJKFont(px); f != nil {
+		return f, nil
+	}
 	return nil, os.ErrNotExist
+}
+
+// fontStylePenalty 文件名风格词惩罚：请求名里没写的风格词会加惩罚，
+// 从而在未指定 bold/italic 时优先命中 Regular/Book（数值越小越好）。
+func fontStylePenalty(req, base string) int {
+	p := 0
+	for _, w := range []string{"bold", "black", "heavy", "semibold", "demibold", "medium", "light", "thin"} {
+		if strings.Contains(base, w) && !strings.Contains(req, w) {
+			p += 4
+		}
+	}
+	for _, w := range []string{"italic", "oblique"} {
+		if strings.Contains(base, w) && !strings.Contains(req, w) {
+			p += 3
+		}
+	}
+	for _, w := range []string{"condensed", "narrow", "expanded"} {
+		if strings.Contains(base, w) && !strings.Contains(req, w) {
+			p += 2
+		}
+	}
+	if strings.Contains(base, "regular") || strings.Contains(base, "book") {
+		p--
+	}
+	return p
+}
+
+// genericFontAliases 通用族名（规范化后）→ 具体族名候选（按优先级）。
+var genericFontAliases = map[string][]string{
+	"monospace": {"adwaitamono", "notosansmono", "dejavusansmono", "liberationmono", "freesansmono", "couriernew", "mono"},
+	"sansserif": {"adwaitasans", "notosans", "dejavusans", "liberationsans", "freesans", "droidsans", "arial", "helvetica"},
+	"sans":      {"adwaitasans", "notosans", "dejavusans", "liberationsans", "freesans", "droidsans", "arial", "helvetica"},
+	"systemui":  {"adwaitasans", "notosans", "dejavusans", "liberationsans", "freesans", "droidsans"},
+	"default":   {"adwaitasans", "notosans", "dejavusans", "liberationsans", "freesans", "droidsans"},
+	"serif":     {"notoserif", "dejavuserif", "liberationserif", "freeserif", "timesnewroman", "adwaitasans", "notosans"},
+	"cursive":   {"freesans", "notosans", "dejavusans"},
+	"fantasy":   {"freesans", "notosans", "dejavusans"},
+}
+
+// fontNameMatches 请求名（已规范化）与字体内部族名/全名互含匹配。
+func fontNameMatches(f *ttfFont, norm string) bool {
+	if f == nil || norm == "" {
+		return false
+	}
+	for _, n := range []string{f.family, f.name} {
+		nn := normalizeFontName(n)
+		if nn == "" {
+			continue
+		}
+		if strings.Contains(nn, norm) || strings.Contains(norm, nn) {
+			return true
+		}
+	}
+	return false
 }
 
 // fontPathOf 字名→命中路径（回退链单项探测）。
@@ -602,6 +896,128 @@ func normalizeFontName(s string) string {
 		b.WriteRune(r)
 	}
 	return b.String()
+}
+
+// ---------- CJK 字体发现（Style v2：CJK 必须命中系统字体，而不是退化成 5x7 '?'） ----------
+
+// cjkFontKeywords 命中关键字（小写；比较前已去空格/连字符/下划线）。
+var cjkFontKeywords = []string{
+	"notosanscjk", "notosansmonocjk", "sourcehan", "wenquanyi", "wqy",
+	"droidsansfallback", "microsoftyahei", "msyh", "pingfang", "simhei", "simsun", "msung", "cjk",
+}
+
+// cjkKeywordScore 关键字优先级（0 = 不命中）。含完整 CJK 的 glyf 字体优先；CFF 会在嗅探阶段跳过。
+func cjkKeywordScore(norm string) int {
+	hit := false
+	for _, k := range cjkFontKeywords {
+		if strings.Contains(norm, k) {
+			hit = true
+			break
+		}
+	}
+	if !hit {
+		return 0
+	}
+	switch {
+	case strings.Contains(norm, "droidsansfallback"), strings.Contains(norm, "wenquanyi"),
+		strings.Contains(norm, "wqy"), strings.Contains(norm, "microsoftyahei"),
+		strings.Contains(norm, "msyh"), strings.Contains(norm, "pingfang"),
+		strings.Contains(norm, "simhei"), strings.Contains(norm, "simsun"):
+		return 3
+	case strings.Contains(norm, "notosanscjk"), strings.Contains(norm, "notosansmonocjk"),
+		strings.Contains(norm, "sourcehan"):
+		return 2
+	}
+	return 1
+}
+
+// isCJKName 请求的族名是否属于 CJK 关键字族。
+func isCJKName(norm string) bool { return cjkKeywordScore(norm) > 0 }
+
+var (
+	cjkPathsOnce sync.Once
+	cjkPaths     []string
+)
+
+// cjkFontPaths CJK 候选路径（关键字命中，按优先级排序；扫描一次后缓存）。
+func cjkFontPaths() []string {
+	cjkPathsOnce.Do(func() {
+		type cand struct {
+			path  string
+			score int
+		}
+		var cs []cand
+		for _, p := range fontIndexAll() {
+			base := normalizeFontName(strings.TrimSuffix(filepath.Base(p), filepath.Ext(p)))
+			if s := cjkKeywordScore(base); s > 0 {
+				cs = append(cs, cand{p, s})
+			}
+		}
+		sort.SliceStable(cs, func(i, j int) bool { return cs[i].score > cs[j].score })
+		for _, c := range cs {
+			cjkPaths = append(cjkPaths, c.path)
+		}
+	})
+	return cjkPaths
+}
+
+var (
+	cjkMu       sync.Mutex
+	cjkResolved string
+	cjkRejected = map[string]bool{}
+)
+
+// loadCJKFont 按优先级取一个"可解析且含 CJK 字形"的字体；结果缓存，进程内只完整探测一次。
+// 依次跳过：CFF/CFF2 轮廓（无 glyf）、解析失败、无 CJK 字形。
+func loadCJKFont(px int) *ttfFont {
+	cjkMu.Lock()
+	done := cjkResolved
+	cjkMu.Unlock()
+	if done != "" {
+		if f, err := loadFontFile(done, px); err == nil {
+			return f
+		}
+		return nil
+	}
+	for _, p := range cjkFontPaths() {
+		cjkMu.Lock()
+		bad := cjkRejected[p]
+		cjkMu.Unlock()
+		if bad {
+			continue
+		}
+		if !sniffGlyf(p) {
+			cjkMu.Lock()
+			cjkRejected[p] = true
+			cjkMu.Unlock()
+			continue
+		}
+		f, err := loadFontFile(p, px)
+		if err != nil || !f.coversCJK() {
+			cjkMu.Lock()
+			cjkRejected[p] = true
+			cjkMu.Unlock()
+			continue
+		}
+		cjkMu.Lock()
+		cjkResolved = p
+		cjkMu.Unlock()
+		return f
+	}
+	return nil
+}
+
+// coversCJK 是否含常用 CJK 字形（CJK 回退判定）。
+func (f *ttfFont) coversCJK() bool {
+	if f == nil {
+		return false
+	}
+	for _, r := range []rune{'中', '文', '日', '한', 'あ'} {
+		if gid := f.glyphIndex(r); gid != 0 && gid < uint32(f.numGlyphs) {
+			return true
+		}
+	}
+	return false
 }
 
 const defaultFontChain = "monospace"

@@ -1,0 +1,202 @@
+// 47 组件扫掠：结构化满足 ClegNode + setStyle + render（Style v2 路径）
+import "cleg";
+
+program main;
+
+fn main(IOStream io) {
+    cleg::init(1080, 620);
+    clegrt.cleg_clear(16, 20, 30);
+    int total = 0;
+    int ok = 0;
+    int bad = 0;
+    ClegNode c0 = ClegMainWindow::new();
+    c0.setStyle("{\"pos\": \"40,20\", \"text\": \"MainWindow\", \"title\": \"MainWindow\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c0.getW() + c0.getH() + c0.getStyle().size();
+    try { c0.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegMainWindow: " + e); }
+    ClegNode c1 = ClegDialog::new();
+    c1.setStyle("{\"pos\": \"160,20\", \"text\": \"Dialog\", \"title\": \"Dialog\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c1.getW() + c1.getH() + c1.getStyle().size();
+    try { c1.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegDialog: " + e); }
+    ClegNode c2 = ClegFrame::new();
+    c2.setStyle("{\"pos\": \"280,20\", \"text\": \"Frame\", \"title\": \"Frame\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c2.getW() + c2.getH() + c2.getStyle().size();
+    try { c2.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegFrame: " + e); }
+    ClegNode c3 = ClegGroupBox::new();
+    c3.setStyle("{\"pos\": \"400,20\", \"text\": \"GroupBox\", \"title\": \"GroupBox\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c3.getW() + c3.getH() + c3.getStyle().size();
+    try { c3.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegGroupBox: " + e); }
+    ClegNode c4 = ClegLabel::new();
+    c4.setStyle("{\"pos\": \"520,20\", \"text\": \"Label\", \"title\": \"Label\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c4.getW() + c4.getH() + c4.getStyle().size();
+    try { c4.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegLabel: " + e); }
+    ClegNode c5 = ClegButton::new();
+    c5.setStyle("{\"pos\": \"640,20\", \"text\": \"Button\", \"title\": \"Button\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c5.getW() + c5.getH() + c5.getStyle().size();
+    try { c5.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegButton: " + e); }
+    ClegNode c6 = ClegCheckBox::new();
+    c6.setStyle("{\"pos\": \"760,20\", \"text\": \"CheckBox\", \"title\": \"CheckBox\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c6.getW() + c6.getH() + c6.getStyle().size();
+    try { c6.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegCheckBox: " + e); }
+    ClegNode c7 = ClegRadioButton::new();
+    c7.setStyle("{\"pos\": \"880,20\", \"text\": \"RadioButto\", \"title\": \"RadioButto\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c7.getW() + c7.getH() + c7.getStyle().size();
+    try { c7.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegRadioButton: " + e); }
+    ClegNode c8 = ClegLineEdit::new();
+    c8.setStyle("{\"pos\": \"40,110\", \"text\": \"LineEdit\", \"title\": \"LineEdit\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c8.getW() + c8.getH() + c8.getStyle().size();
+    try { c8.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegLineEdit: " + e); }
+    ClegNode c9 = ClegTextEdit::new();
+    c9.setStyle("{\"pos\": \"160,110\", \"text\": \"TextEdit\", \"title\": \"TextEdit\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c9.getW() + c9.getH() + c9.getStyle().size();
+    try { c9.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegTextEdit: " + e); }
+    ClegNode c10 = ClegPlainTextEdit::new();
+    c10.setStyle("{\"pos\": \"280,110\", \"text\": \"PlainTextE\", \"title\": \"PlainTextE\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c10.getW() + c10.getH() + c10.getStyle().size();
+    try { c10.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegPlainTextEdit: " + e); }
+    ClegNode c11 = ClegTextBrowser::new();
+    c11.setStyle("{\"pos\": \"400,110\", \"text\": \"TextBrowse\", \"title\": \"TextBrowse\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c11.getW() + c11.getH() + c11.getStyle().size();
+    try { c11.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegTextBrowser: " + e); }
+    ClegNode c12 = ClegProgressBar::new();
+    c12.setStyle("{\"pos\": \"520,110\", \"text\": \"ProgressBa\", \"title\": \"ProgressBa\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c12.getW() + c12.getH() + c12.getStyle().size();
+    try { c12.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegProgressBar: " + e); }
+    ClegNode c13 = ClegSlider::new();
+    c13.setStyle("{\"pos\": \"640,110\", \"text\": \"Slider\", \"title\": \"Slider\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c13.getW() + c13.getH() + c13.getStyle().size();
+    try { c13.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegSlider: " + e); }
+    ClegNode c14 = ClegScrollBar::new();
+    c14.setStyle("{\"pos\": \"760,110\", \"text\": \"ScrollBar\", \"title\": \"ScrollBar\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c14.getW() + c14.getH() + c14.getStyle().size();
+    try { c14.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegScrollBar: " + e); }
+    ClegNode c15 = ClegDial::new();
+    c15.setStyle("{\"pos\": \"880,110\", \"text\": \"Dial\", \"title\": \"Dial\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c15.getW() + c15.getH() + c15.getStyle().size();
+    try { c15.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegDial: " + e); }
+    ClegNode c16 = ClegSpinBox::new();
+    c16.setStyle("{\"pos\": \"40,200\", \"text\": \"SpinBox\", \"title\": \"SpinBox\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c16.getW() + c16.getH() + c16.getStyle().size();
+    try { c16.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegSpinBox: " + e); }
+    ClegNode c17 = ClegDoubleSpinBox::new();
+    c17.setStyle("{\"pos\": \"160,200\", \"text\": \"DoubleSpin\", \"title\": \"DoubleSpin\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c17.getW() + c17.getH() + c17.getStyle().size();
+    try { c17.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegDoubleSpinBox: " + e); }
+    ClegNode c18 = ClegComboBox::new();
+    c18.setStyle("{\"pos\": \"280,200\", \"text\": \"ComboBox\", \"title\": \"ComboBox\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c18.getW() + c18.getH() + c18.getStyle().size();
+    try { c18.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegComboBox: " + e); }
+    ClegNode c19 = ClegListWidget::new();
+    c19.setStyle("{\"pos\": \"400,200\", \"text\": \"ListWidget\", \"title\": \"ListWidget\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c19.getW() + c19.getH() + c19.getStyle().size();
+    try { c19.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegListWidget: " + e); }
+    ClegNode c20 = ClegListView::new();
+    c20.setStyle("{\"pos\": \"520,200\", \"text\": \"ListView\", \"title\": \"ListView\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c20.getW() + c20.getH() + c20.getStyle().size();
+    try { c20.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegListView: " + e); }
+    ClegNode c21 = ClegTableWidget::new();
+    c21.setStyle("{\"pos\": \"640,200\", \"text\": \"TableWidge\", \"title\": \"TableWidge\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c21.getW() + c21.getH() + c21.getStyle().size();
+    try { c21.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegTableWidget: " + e); }
+    ClegNode c22 = ClegTableView::new();
+    c22.setStyle("{\"pos\": \"760,200\", \"text\": \"TableView\", \"title\": \"TableView\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c22.getW() + c22.getH() + c22.getStyle().size();
+    try { c22.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegTableView: " + e); }
+    ClegNode c23 = ClegTreeWidget::new();
+    c23.setStyle("{\"pos\": \"880,200\", \"text\": \"TreeWidget\", \"title\": \"TreeWidget\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c23.getW() + c23.getH() + c23.getStyle().size();
+    try { c23.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegTreeWidget: " + e); }
+    ClegNode c24 = ClegTreeView::new();
+    c24.setStyle("{\"pos\": \"40,290\", \"text\": \"TreeView\", \"title\": \"TreeView\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c24.getW() + c24.getH() + c24.getStyle().size();
+    try { c24.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegTreeView: " + e); }
+    ClegNode c25 = ClegTabWidget::new();
+    c25.setStyle("{\"pos\": \"160,290\", \"text\": \"TabWidget\", \"title\": \"TabWidget\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c25.getW() + c25.getH() + c25.getStyle().size();
+    try { c25.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegTabWidget: " + e); }
+    ClegNode c26 = ClegStackedWidget::new();
+    c26.setStyle("{\"pos\": \"280,290\", \"text\": \"StackedWid\", \"title\": \"StackedWid\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c26.getW() + c26.getH() + c26.getStyle().size();
+    try { c26.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegStackedWidget: " + e); }
+    ClegNode c27 = ClegToolBox::new();
+    c27.setStyle("{\"pos\": \"400,290\", \"text\": \"ToolBox\", \"title\": \"ToolBox\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c27.getW() + c27.getH() + c27.getStyle().size();
+    try { c27.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegToolBox: " + e); }
+    ClegNode c28 = ClegMenuBar::new();
+    c28.setStyle("{\"pos\": \"520,290\", \"text\": \"MenuBar\", \"title\": \"MenuBar\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c28.getW() + c28.getH() + c28.getStyle().size();
+    try { c28.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegMenuBar: " + e); }
+    ClegNode c29 = ClegMenu::new();
+    c29.setStyle("{\"pos\": \"640,290\", \"text\": \"Menu\", \"title\": \"Menu\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c29.getW() + c29.getH() + c29.getStyle().size();
+    try { c29.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegMenu: " + e); }
+    ClegNode c30 = ClegToolBar::new();
+    c30.setStyle("{\"pos\": \"760,290\", \"text\": \"ToolBar\", \"title\": \"ToolBar\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c30.getW() + c30.getH() + c30.getStyle().size();
+    try { c30.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegToolBar: " + e); }
+    ClegNode c31 = ClegStatusBar::new();
+    c31.setStyle("{\"pos\": \"880,290\", \"text\": \"StatusBar\", \"title\": \"StatusBar\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c31.getW() + c31.getH() + c31.getStyle().size();
+    try { c31.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegStatusBar: " + e); }
+    ClegNode c32 = ClegScrollArea::new();
+    c32.setStyle("{\"pos\": \"40,380\", \"text\": \"ScrollArea\", \"title\": \"ScrollArea\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c32.getW() + c32.getH() + c32.getStyle().size();
+    try { c32.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegScrollArea: " + e); }
+    ClegNode c33 = ClegSplitter::new();
+    c33.setStyle("{\"pos\": \"160,380\", \"text\": \"Splitter\", \"title\": \"Splitter\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c33.getW() + c33.getH() + c33.getStyle().size();
+    try { c33.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegSplitter: " + e); }
+    ClegNode c34 = ClegDockWidget::new();
+    c34.setStyle("{\"pos\": \"280,380\", \"text\": \"DockWidget\", \"title\": \"DockWidget\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c34.getW() + c34.getH() + c34.getStyle().size();
+    try { c34.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegDockWidget: " + e); }
+    ClegNode c35 = ClegMdiArea::new();
+    c35.setStyle("{\"pos\": \"400,380\", \"text\": \"MdiArea\", \"title\": \"MdiArea\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c35.getW() + c35.getH() + c35.getStyle().size();
+    try { c35.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegMdiArea: " + e); }
+    ClegNode c36 = ClegMdiSubWindow::new();
+    c36.setStyle("{\"pos\": \"520,380\", \"text\": \"MdiSubWind\", \"title\": \"MdiSubWind\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c36.getW() + c36.getH() + c36.getStyle().size();
+    try { c36.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegMdiSubWindow: " + e); }
+    ClegNode c37 = ClegCalendarWidget::new();
+    c37.setStyle("{\"pos\": \"640,380\", \"text\": \"CalendarWi\", \"title\": \"CalendarWi\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c37.getW() + c37.getH() + c37.getStyle().size();
+    try { c37.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegCalendarWidget: " + e); }
+    ClegNode c38 = ClegDateEdit::new();
+    c38.setStyle("{\"pos\": \"760,380\", \"text\": \"DateEdit\", \"title\": \"DateEdit\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c38.getW() + c38.getH() + c38.getStyle().size();
+    try { c38.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegDateEdit: " + e); }
+    ClegNode c39 = ClegTimeEdit::new();
+    c39.setStyle("{\"pos\": \"880,380\", \"text\": \"TimeEdit\", \"title\": \"TimeEdit\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c39.getW() + c39.getH() + c39.getStyle().size();
+    try { c39.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegTimeEdit: " + e); }
+    ClegNode c40 = ClegLCDNumber::new();
+    c40.setStyle("{\"pos\": \"40,470\", \"text\": \"LCDNumber\", \"title\": \"LCDNumber\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c40.getW() + c40.getH() + c40.getStyle().size();
+    try { c40.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegLCDNumber: " + e); }
+    ClegNode c41 = ClegHeaderView::new();
+    c41.setStyle("{\"pos\": \"160,470\", \"text\": \"HeaderView\", \"title\": \"HeaderView\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c41.getW() + c41.getH() + c41.getStyle().size();
+    try { c41.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegHeaderView: " + e); }
+    ClegNode c42 = ClegColumnView::new();
+    c42.setStyle("{\"pos\": \"280,470\", \"text\": \"ColumnView\", \"title\": \"ColumnView\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c42.getW() + c42.getH() + c42.getStyle().size();
+    try { c42.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegColumnView: " + e); }
+    ClegNode c43 = ClegSizeGrip::new();
+    c43.setStyle("{\"pos\": \"400,470\", \"text\": \"SizeGrip\", \"title\": \"SizeGrip\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c43.getW() + c43.getH() + c43.getStyle().size();
+    try { c43.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegSizeGrip: " + e); }
+    ClegNode c44 = ClegDialogButtonBox::new();
+    c44.setStyle("{\"pos\": \"520,470\", \"text\": \"DialogButt\", \"title\": \"DialogButt\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c44.getW() + c44.getH() + c44.getStyle().size();
+    try { c44.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegDialogButtonBox: " + e); }
+    ClegNode c45 = ClegOpenGLWidget::new();
+    c45.setStyle("{\"pos\": \"640,470\", \"text\": \"OpenGLWidg\", \"title\": \"OpenGLWidg\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c45.getW() + c45.getH() + c45.getStyle().size();
+    try { c45.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegOpenGLWidget: " + e); }
+    ClegNode c46 = ClegVideoWidget::new();
+    c46.setStyle("{\"pos\": \"760,470\", \"text\": \"VideoWidge\", \"title\": \"VideoWidge\", \"background-color\": \"#2b3a55\", \"color\": \"#e6edf7\", \"border-width\": \"1,2\", \"border-color\": \"#34d3eb\", \"border-radius\": \"6\", \"opacity\": \"0.95\"}");
+    total = total + c46.getW() + c46.getH() + c46.getStyle().size();
+    try { c46.render(); ok = ok + 1; } catch (void e) { bad = bad + 1; io.println("RENDER-FAIL ClegVideoWidget: " + e); }
+    io.println("SWEEP components=47 ok=" + ok.toString() + " bad=" + bad.toString() + " checksum=" + total.toString());
+    if (ok == 47 && bad == 0) { io.println("OK components-sweep-all-47-render"); } else { io.println("FAIL components-sweep-all-47-render"); }
+}

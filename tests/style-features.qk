@@ -1,0 +1,61 @@
+import "cleg";
+program main;
+fn chk(IOStream io, String name, bool cond) void {
+    if (cond) { io.println("OK " + name); } else { io.println("FAIL " + name); }
+}
+fn main(IOStream io) {
+    ClegLabel l = ClegLabel::new();
+    l.setStyle(`{"font":"bold italic 14px Adwaita Sans, monospace"}`);
+    chk(io, "font-size", clegstyle::get(l, "font-size", "") == "14");
+    chk(io, "font-family", clegstyle::get(l, "font-family", "") == "Adwaita Sans, monospace");
+    chk(io, "font-style", clegstyle::get(l, "font-style", "") == "italic");
+    chk(io, "font-weight", clegstyle::get(l, "font-weight", "") == "bold");
+    ClegLabel l2 = ClegLabel::new();
+    l2.setStyle(`{"font":"monospace"}`);
+    chk(io, "font-family-legacy", clegstyle::get(l2, "font-family", "") == "monospace");
+
+    ClegFrame v = ClegFrame::new();
+    v.setStyle(`{"visible":"false"}`);
+    chk(io, "visible-false", !clegstyle::visible(v));
+    v.setStyle(`{"visible":"true"}`);
+    chk(io, "visible-true", clegstyle::visible(v));
+
+    ClegFrame c = ClegFrame::new();
+    c.setStyle(`{"overflow":"hidden"}`);
+    int flags = clegstyle::begin(c);
+    clegstyle::end(flags);
+    chk(io, "overflow-clip-flags", flags == 2);
+    ClegFrame c2 = ClegFrame::new();
+    c2.setStyle(`{"overflow":"hidden","transform":"translate(3,4) scale(1.5)"}`);
+    int flags2 = clegstyle::begin(c2);
+    clegstyle::end(flags2);
+    chk(io, "clip+transform-flags", flags2 == 3);
+
+    ClegFrame a = ClegFrame::new();
+    a.w = 40; a.h = 30;
+    ClegFrame b = ClegFrame::new();
+    b.w = 40; b.h = 30;
+    b.setStyle(`{"gap":"10"}`);
+    List<ClegNode> items = List::new();
+    items.append(a);
+    items.append(b);
+    cleglayout::vbox(items, 5, 5, 100, 2);
+    chk(io, "layout-gap", clegstyle::get(b, "pos", "") == "5,37");
+    chk(io, "layout-pos-a", clegstyle::get(a, "pos", "") == "5,5");
+
+    chk(io, "fmtFloat", qss::interpValue("opacity", "1", "0.35", 0.333333) == "0.7833");
+    chk(io, "width-int", qss::interpValue("width", "10", "20", 0.5) == "15");
+
+    // 四角圆角 / 四边边框样式 回退
+    ClegFrame r1 = ClegFrame::new();
+    r1.setStyle(`{"border-top-left-radius":"12"}`);
+    chk(io, "percorner-radius", clegstyle::radiusOf(r1, clegstyle::stateOf(r1)) == 12);
+    ClegFrame r2 = ClegFrame::new();
+    r2.setStyle(`{"border-radius":"8,4"}`);
+    chk(io, "radius-2val", clegstyle::radiusOf(r2, clegstyle::stateOf(r2)) == 8);
+    r2.setStyle(`{"border-radius":"","border-top-right-radius":"6"}`);
+    chk(io, "percorner-fallback", clegstyle::radiusOf(r2, clegstyle::stateOf(r2)) == 6);
+    ClegFrame bs = ClegFrame::new();
+    bs.setStyle(`{"border-right-style":"dashed"}`);
+    chk(io, "per-side-style", clegstyle::borderStyle(bs, clegstyle::stateOf(bs)) == 1);
+}

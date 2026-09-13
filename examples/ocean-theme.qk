@@ -1,0 +1,98 @@
+// cleg 海洋主题（Style v2）：深海渐变 + 胶囊按钮 + 页面切换过冲回弹
+// 产出 ocean-<t>ms.png（t = 0/120/240/380/560/760）到当前目录
+import "cleg";
+
+program main;
+
+fn label(int x, int y, int w, int h, String text, String color, int size, String align) ClegFrame {
+    ClegFrame f = ClegFrame::new();
+    f.getStyle()["pos"] = x.toString() + "," + y.toString();
+    f.w = w;
+    f.h = h;
+    f.setStyle("{\"background-color\":\"\",\"text\":\"" + text + "\",\"color\":\"" + color + "\",\"font-size\":\"" + size.toString() + "\",\"text-align\":\"" + align + "\",\"text-valign\":\"middle\",\"letter-spacing\":\"1\"}");
+    return f;
+}
+
+fn pill(int x, int y, int w, int h, String bg, String fg, String text, bool active) ClegButton {
+    ClegButton b = ClegButton::new();
+    b.getStyle()["pos"] = x.toString() + "," + y.toString();
+    b.w = w;
+    b.h = h;
+    b.setStyle("{\"text\":\"" + text + "\",\"background-color\":\"" + bg + "\",\"color\":\"" + fg + "\",\"border-radius\":\"999\",\"border-width\":\"0\",\"text-align\":\"center\",\"text-valign\":\"middle\",\"font-size\":\"15\",\"box-shadow\":\"0 8 18 0 #04141Ca0\",\"transition\":\"background-color 160ms ease-out, box-shadow 200ms ease-out\",\"background-color:hover\":\"#3FE0D0\",\"background-color:pressed\":\"#168C86\"}");
+    if (active) { cleg::setState(b, "checked", true); }
+    return b;
+}
+
+fn main(IOStream io) {
+    cleg::init(880, 520);
+
+    // 窗口：深海渐变 + 圆角 + 边框 + 阴影
+    ClegMainWindow win = ClegMainWindow::new();
+    win.getStyle()["pos"] = "0,0";
+    win.w = 880;
+    win.h = 520;
+    win.setStyle("{\"background-gradient\":\"linear(105,#0E3A4F,0,#07202C,1)\",\"border-radius\":\"22\",\"border-width\":\"1\",\"border-color\":\"#1B5468\",\"box-shadow\":\"0 18 48 0 #04141Ccc\"}");
+
+    // 侧栏
+    ClegFrame nav = ClegFrame::new();
+    nav.getStyle()["pos"] = "24,100";
+    nav.w = 190;
+    nav.h = 396;
+    nav.setStyle("{\"background-color\":\"#0C3243\",\"border-radius\":\"18\",\"box-shadow\":\"0 10 26 0 #04141C99\"}");
+
+    // 标题
+    ClegFrame title = label(34, 26, 420, 34, "海洋控制台", "#E6F7F9", 24, "left");
+    ClegFrame sub = label(36, 60, 520, 22, "ocean theme style v2 springy switch", "#9FD4DE", 13, "left");
+
+    // 胶囊导航
+    ClegButton b1 = pill(42, 128, 154, 48, "#155C6E", "#E6F7F9", "OVERVIEW", false);
+    ClegButton b2 = pill(42, 188, 154, 48, "#1FB6AE", "#04222B", "DATA", true);
+    ClegButton b3 = pill(42, 248, 154, 48, "#155C6E", "#E6F7F9", "SETTINGS", false);
+
+    // 内容页（切换动画作用对象）
+    ClegFrame page = ClegFrame::new();
+    page.getStyle()["pos"] = "274,120";
+    page.w = 596;
+    page.h = 336;
+    page.setStyle("{\"background-gradient\":\"linear(120,#12475E,0,#0E3F55,1)\",\"border-radius\":\"20\",\"border-width\":\"1\",\"border-color\":\"#1E5A73\",\"box-shadow\":\"0 10 26 0 #04141C99\",\"overflow\":\"hidden\"}");
+    ClegFrame pTitle = label(310, 154, 540, 40, "DATA", "#E6F7F9", 28, "left");
+    ClegFrame pBody = label(312, 206, 548, 26, "page switch overshoot bounce settle", "#9FD4DE", 15, "left");
+
+    // 进度条
+    ClegProgressBar bar = ClegProgressBar::new();
+    bar.getStyle()["pos"] = "312,270";
+    bar.w = 520;
+    bar.h = 14;
+    bar.setStyle("{\"background-color\":\"#0A2A38\",\"border-radius\":\"7\",\"chunk-bg\":\"#1FB6AE\",\"value\":\"40\",\"transition\":\"value 420ms cubic-bezier(0.34,1.56,0.64,1)\"}");
+
+    List<ClegNode> nodes = List::new();
+    nodes.append(win); nodes.append(nav); nodes.append(title); nodes.append(sub);
+    nodes.append(b1); nodes.append(b2); nodes.append(b3);
+    nodes.append(page); nodes.append(pTitle); nodes.append(pBody); nodes.append(bar);
+
+    // 页面切换：过冲 → 回弹 → 稳定
+    ClegAnimator an = ClegAnimator::new();
+    an.define("pageIn", "{\"0\":{\"opacity\":\"0\",\"transform\":\"translate(120,0) scale(0.92)\"},\"0.55\":{\"opacity\":\"1\",\"transform\":\"translate(-14,0) scale(1.03)\"},\"0.78\":{\"opacity\":\"1\",\"transform\":\"translate(6,0) scale(0.99)\"},\"1\":{\"opacity\":\"1\",\"transform\":\"translate(0,0) scale(1)\"}}");
+    page.getStyle()["animation"] = "pageIn 560ms cubic-bezier(0.34,1.56,0.64,1) 0ms 1 both";
+
+    List<int> times = List::new();
+    times.append(0); times.append(120); times.append(240); times.append(380); times.append(560); times.append(760);
+    int i = 0;
+    int prev = 0;
+    while (i < times.size()) {
+        int t = times[i];
+        if (t == 240) { cleg::setState(b2, "hover", true); }
+        if (t == 380) { cleg::setState(b2, "hover", false); cleg::setState(b2, "pressed", true); }
+        if (t == 560) { cleg::setState(b2, "pressed", false); }
+        an.tick(nodes, t - prev);
+        prev = t;
+        bar.getStyle()["value"] = (40 + t / 8).toString();
+        clegrt.cleg_clear(7, 32, 44);
+        tick(nodes);
+        String name = "ocean-" + t.toString() + "ms.png";
+        cleg::cleg_frame(name);
+        io.println(name);
+        i = i + 1;
+    }
+    io.println("ocean theme ok");
+}

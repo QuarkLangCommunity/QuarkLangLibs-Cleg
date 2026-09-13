@@ -2,7 +2,7 @@
 
 - 目标：自研 GUI 框架 **cleg**（`ClegNode` 接口 + `style HashTable<String,String>` + 47 组件 + 字体回退链）全面对齐 Qt Widgets 使用方式。
 - 事实核对方式：全部内容摘自 Qt 6.11 官方文档（doc.qt.io），每节标注来源 URL；关键差异点（如 QSlider 无 `::sub-page`、QLabel 不支持 `:hover`、QSS 默认不继承 font/color）均按官方参考原文标注。
-- 本文所有 "cleg 现状" 均基于实读代码：`cleg.qk`（47 个 struct + impl ClegNode）、`internal/lang/clegfb.go`（CPU 帧缓冲 + 字体回退链）。
+- 本文所有 "cleg 现状" 均基于实读代码：`cleg.qk`（47 个 `type struct` + `impl`，结构化满足 ClegNode 接口）、`internal/lang/clegfb.go`（CPU 帧缓冲 + 字体回退链）。
 
 ---
 
@@ -393,7 +393,7 @@ QWidget 是 Qt Widgets 所有 UI 对象的基类：每个 widget 都是矩形、
 **cleg 现状（实读 `cleg.qk` / `clegfb.go`，非推测）**：
 - `ClegNode` 接口（dynamic）：`render / setStyle(jsonText) / getStyle / getX / getY / getW / getH`。
 - `style HashTable<String,String>`：11 个旧键 `text/items/tabs/rows/menus/size/pos/font/color/bg/title`；QSS 名键仅 `color/background-color/font-size/font-family/border-radius` 在 render 中经 `qss::st/num/cr` 读取（部分组件）。
-- 47 个组件 struct + impl ClegNode；状态仅 ClegCheckBox/ClegRadioButton 有 `checked bool` 字段；无 hover/pressed/disabled/focus 渲染分支。
+- 47 个组件 `type struct` + `impl`（结构化满足 ClegNode）；状态仅 ClegCheckBox/ClegRadioButton 有 `checked bool` 字段；无 hover/pressed/disabled/focus 渲染分支。
 - 布局：`cleglayout::{vbox,hbox,grid}` 三个函数 = 直接改写 `style["pos"]`；无 margins/spacing 样式键（spacing 是函数参数）。
 - 信号：`clegsignal::emit(node, name)` → `qksignal_emit` 触发节点方法（如 `onClicked`）；无参数、无 connect/disconnect、无多播。
 - 渲染：CPU 帧缓冲（ARGB u32）+ 5x7 位图字体；文本回退链 `drawTextChain`：按 `font` 链逐个探测 TTF（freetype）→ 全失败回退 5x7 位图。无 png/背景图/九宫格、无文本度量（宽度/居中）、无裁剪边界（wrap/middle）。
@@ -405,7 +405,7 @@ QWidget 是 Qt Widgets 所有 UI 对象的基类：每个 widget 都是矩形、
 | C1 | **无 QSS 键全集**：仅 5 个 QSS 键 + 11 个旧键 | margin/padding/border-*/background-*/color/font-*/text-align/text-decoration（第 2 节全表） | 逐组件把 render 的取色/取文统一改为 `qss::num/cr/st` 读取以下键：`padding`、`margin`、`border-width`、`border-style`、`border-color`、`text-align`、`text-decoration`、`font-style`、`font-weight`、`letter-spacing` |
 | C2 | **无盒模型**：无 content 矩形三区（margin/border/padding），`border-radius` 已直接在 (x,y,w,h) 上画 | QSS box model（background-clip/origin） | 新增 `getContentRect()` 派生：content = (x+margin+border+padding…)；render 统一先算 content rect 再画；键 `margin`/`padding`/`border-width` 解析为四元组 `"1,2,1,2"` 或 `"2"` |
 | C3 | **无伪状态**：hover/pressed/disabled/checked(仅字段)/focus/selected 无 style 表达 | 45 个伪状态 | ① 事件层维护节点状态位；② 键命名约定 `"<qss名>:<state>"`，e.g. `style["background-color:hover"]="240,98,146"`；③ 扩展 `qss::cr(state,...)` 辅助函数带 state 参数：`cr(style, "background-color", state, 0, fb)`；④ 含 `checked` 的组件（现为 bool 字段）统一并入状态位 |
-| C4 | **无事件/命中测试**：没有 mouse press/move/hover/键盘分发，`onClicked` 触发源不明 | QMouseEvent/QKeyEvent + paintEvent 等事件虚函数 | `cleg::dispatchEvent(x,y,kind)`：命中测试采用 `hitTest(node,x,y)`（按 getX/getY/getW/getH 倒序 z）；节点协议新增 `dynamic fn onMouseDown(self, x,y)`/`onMouseUp`/`onHover(enter bool)`/`onKey`，运行库转发到 `clegsignal::emit(node,"clicked")` |
+| C4 | **无事件/命中测试**：没有 mouse press/move/hover/键盘分发，`onClicked` 触发源不明 | QMouseEvent/QKeyEvent + paintEvent 等事件虚函数 | `cleg::dispatchEvent(x,y,kind)`：命中测试采用 `hitTest(node,x,y)`（按 getX/getY/getW/getH 倒序 z）；节点协议新增 `dynamic fn onMouseDown(Self self, int x, int y)`/`onMouseUp`/`onHover(enter bool)`/`onKey`，运行库转发到 `clegsignal::emit(node,"clicked")` |
 | C5 | **布局不计算尺寸**：只有"写 pos"函数，无 minimum/maximum/preferred 元数据、无 sizeHint、无 stretch | QSizePolicy 六策略 + sizeHint/minimumSizeHint | ① ClegNode 增补只读方法：`getMinW/getMinH/getMaxW/getMaxH`（默认从 style 键 `min-width/min-height/max-width/max-height` 读，未设回退 0/QWIDGETSIZE_MAX）；② 键 `size-policy`（`"h,v"` 两轴，值 fixed/minimum/maximum/preferred/expanding/ignored）；③ ClegLayout 遍历：先收集 sizeHint（键 `size-hint="w,h"` 或派生 `size` 旧键），再按策略分配 |
 | C6 | **stretch/弹性缺席**：无 QSpacerItem、无 stretch 因子 | QBoxLayout::addStretch/setStretch | 键 `stretch="1"`（默认 0）；ClegLayout::vbox 累计 stretch 比例分配剩余空间 |
 | C7 | **信号无参无订阅**：`emit(node,name)` 无法携带 value/text/index，也无槽注册（仅约定方法名） | 带参信号 + connect(sender,signal,receiver,slot) | ① `clegsignal::on(node, "valueChanged", handler)` 注册表（节点上动态字段或 HashTable<String, fn>）；② `emit(node, "valueChanged", value)` 支持 int/string 参数；③ 与 Qt 对齐的语义：多播顺序、disconnect、销毁自动断开 |
@@ -435,7 +435,7 @@ QWidget 是 Qt Widgets 所有 UI 对象的基类：每个 widget 都是矩形、
 | D13 | 主窗口无布局槽位 | menuBar/statusBar/centralWidget/addDockWidget/addToolBar | `ClegMainWindow` 增方法 `setCentralWidget(node)/addDockWidget(node)/addToolBar(node)` + 键 `menu-bar`/`status-bar`（节点引用存 HashTable 需存 id，v2 或引用表） |
 | D14 | 无 palette 角色体系 | QPalette（Window/Button/Text/Highlight/Active/Disabled） | 键 `palette.window`/`palette.button`/`palette.text`/`palette.highlight`/`palette.disabled.text`；组件缺省键时沿调色板再回退 |
 | D15 | 无 cursor 与 tooltip 渲染 | cursor/toolTip | 键 `cursor="hand|text|arrow|move|cross"`（宿主层实现）；`tooltip` 已留键，需事件层 `onHover` 后画 tip 气泡（圆角+`tooltip` 主题） |
-| D16 | 无 QToolTip 全局主题 | QToolTip（box model 全支持） | `cleg::setGlobalStyle(key,val)` → 全局样式表 HashTable，组件样式合并（对应 QApplication::setStyleSheet） |
+| D16 | 无 QToolTip 全局主题 | QToolTip（box model 全支持） | `Theme` 实例（`cleg::theme(json)` → `applyTheme(t,node)` → `__g~` 全局层，组件样式合并；对应 QApplication::setStyleSheet） |
 | D17 | 无模型/委托概念 | QItemDelegate/QModelIndex | v2：`ClegItemDelegate`（`onPaint/onEdit`）；`ClegModelIndex(row,col)` 值类型；ClegListView/ClegTableView 委托回调 |
 | D18 | 无窗框/窗口装饰策略 | windowFlags/windowModality | 键 `window-flags="frameless|tool|dialog"`、`window-modality="application|window"` |
 | D19 | 无 F1/whatsThis/状态提示 | whatsThis/statusTip | 键 `whats-this`/`status-tip`（statusbar 显示） |

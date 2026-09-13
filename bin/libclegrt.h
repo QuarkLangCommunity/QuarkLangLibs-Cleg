@@ -27,6 +27,12 @@ extern const char *_GoStringPtr(_GoString_ s);
 
 #line 1 "cgo-generated-wrapper"
 
+#line 3 "exports2.go"
+
+#include <stdlib.h>
+
+#line 1 "cgo-generated-wrapper"
+
 
 /* End of preamble from import "C" comments.  */
 
@@ -96,6 +102,18 @@ extern int cleg_frame(char* path);
 extern int cleg_screen_open(int w, int h, char* title);
 extern int cleg_screen_present(void);
 extern int cleg_screen_close(void);
+extern int cleg_blend_rect(int x, int y, int w, int h, unsigned int argb, int alpha, int radius);
+extern int cleg_gradient(int x, int y, int w, int h, int dir, unsigned int c1, unsigned int c2, int radius);
+extern int cleg_radial(int cx, int cy, int r, unsigned int c1, unsigned int c2);
+extern int cleg_border(int x, int y, int w, int h, int wt, int wr, int wb, int wl, unsigned int ct, unsigned int cr, unsigned int cb, unsigned int cl, int radius, int style);
+extern int cleg_shadow(int x, int y, int w, int h, int dx, int dy, int blur, int spread, unsigned int argb, int inset, int radius);
+extern int cleg_clip_push(int x, int y, int w, int h);
+extern int cleg_clip_pop(void);
+extern int cleg_text_width(char* text, int size, char* font);
+extern int cleg_text_height(int size);
+extern int cleg_text_ex(char* text, int x, int y, int size, char* font, unsigned int color, int align, int valign, int letter_spacing, int line_height, int decoration, int ellipsis, int max_w);
+extern int cleg_image(char* path, int x, int y, int w, int h, int repeat);
+extern int cleg_transform(int dx, int dy, int sx_num, int sx_den, int sy_num, int sy_den);
 
 #ifdef __cplusplus
 }

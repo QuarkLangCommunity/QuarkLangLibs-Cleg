@@ -1,0 +1,26 @@
+// §9 cleg_image 原语 + background-image 路径
+import "cleg";
+
+program main;
+
+fn chk(IOStream io, String name, bool cond) void {
+    if (cond) { io.println("OK " + name); } else { io.println("FAIL " + name); }
+}
+
+fn main(IOStream io) {
+    cleg::init(64, 64);
+    clegrt.cleg_clear(200, 50, 50);
+    cleg::cleg_frame("img-src.png");
+    int rc = clegrt.cleg_image("img-src.png", 0, 0, 32, 32, 0);
+    chk(io, "image-decode-ok", rc == 0);
+    int rc2 = clegrt.cleg_image("no-such-file.png", 0, 0, 32, 32, 0);
+    chk(io, "image-missing-rc", rc2 == -2);
+    int rc3 = clegrt.cleg_image("img-src.png", 0, 0, 32, 32, 1);
+    chk(io, "image-repeat-ok", rc3 == 0);
+    ClegFrame f = ClegFrame::new();
+    f.w = 64;
+    f.h = 64;
+    f.setStyle(`{"pos":"0,0","background-image":"img-src.png","background-repeat":"repeat","background-position":"4 4"}`);
+    f.render();
+    chk(io, "background-image-render", true);
+}

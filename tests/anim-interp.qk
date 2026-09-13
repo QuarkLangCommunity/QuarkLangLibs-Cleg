@@ -1,0 +1,158 @@
+// ClegAnimator 关键帧 + transition 端到端冒烟
+import "cleg";
+
+program main;
+
+fn chk(IOStream io, String name, bool cond) void {
+    if (cond) { io.println("OK " + name); } else { io.println("FAIL " + name); }
+}
+fn near(float a, float b) bool {
+    float d = a - b;
+    if (d < 0.0) { d = 0.0 - d; }
+    return d < 0.0001;
+}
+
+fn main(IOStream io) {
+    // ---- 缓动 / 插值单测（端点 + 中点） ----
+    chk(io, "ease-linear-0", qss::ease("linear", 0.0) == 0.0);
+    chk(io, "ease-linear-1", qss::ease("linear", 1.0) == 1.0);
+    chk(io, "ease-ease-0", qss::ease("ease", 0.0) == 0.0);
+    chk(io, "ease-ease-1", qss::ease("ease", 1.0) == 1.0);
+    chk(io, "ease-in-mid", qss::ease("ease-in", 0.5) < 0.5);
+    chk(io, "ease-out-mid", qss::ease("ease-out", 0.5) > 0.5);
+    chk(io, "ease-inout-sym", qss::ease("ease-in-out", 0.25) < 0.25 && qss::ease("ease-in-out", 0.75) > 0.75);
+    chk(io, "ease-bezier-mid", near(qss::ease("cubic-bezier(0,0,1,1)", 0.5), 0.5));
+    chk(io, "ease-steps", qss::ease("steps(4)", 0.6) == 0.5);
+    chk(io, "interp-color", qss::interpValue("color", "0,0,0", "255,255,255", 0.5) == "128,128,128");
+    chk(io, "interp-len", qss::interpValue("width", "10", "20", 0.5) == "15");
+    chk(io, "interp-opacity-float", qss::interpValue("opacity", "1", "0.35", 0.333333) == "0.7833");
+    chk(io, "interp-tf", qss::interpValue("transform", "translate(0,0) scale(1)", "translate(40,20) scale(2)", 0.5) == "translate(20,10) scale(1.5,1.5)");
+
+    List<ClegNode> nodes = List::new();
+    ClegButton b = ClegButton::new();
+    b.setStyle("{\"pos\":\"10,10\"}");
+    nodes.append(b);
+    ClegAnimator an = ClegAnimator::new();
+    an.define("pulse", "{\"0\":{\"opacity\":\"1\",\"transform\":\"translate(0,0) scale(1)\",\"background-color\":\"#336699\"},\"0.5\":{\"opacity\":\"0.4\",\"transform\":\"translate(20,10) scale(1.2)\",\"background-color\":\"#ff0000\"},\"1\":{\"opacity\":\"1\",\"transform\":\"translate(0,0) scale(1)\",\"background-color\":\"#336699\"}}");
+    b.getStyle()["animation"] = "pulse 1000ms linear 0ms 1 normal both";
+
+    an.tick(nodes, 0);
+    chk(io, "kf-t0-opacity", near(qss::fnum(clegstyle::get(b, "opacity", ""), 0.0), 1.0));
+    StyleTransform t0 = qss::transform(clegstyle::get(b, "transform", ""));
+    chk(io, "kf-t0-transform", t0.dx == 0 && t0.sxn == 1000);
+    chk(io, "kf-t0-color", qss::color(clegstyle::get(b, "background-color", "")) == qss::color("#336699"));
+
+    an.tick(nodes, 250);
+    chk(io, "kf-t250-opacity", near(qss::fnum(clegstyle::get(b, "opacity", ""), 0.0), 0.7));
+    StyleTransform t1 = qss::transform(clegstyle::get(b, "transform", ""));
+    chk(io, "kf-t250-transform", t1.dx == 10 && t1.dy == 5 && t1.sxn == 1100);
+    int c250 = qss::color(clegstyle::get(b, "background-color", ""));
+    chk(io, "kf-t250-color", qss::cR(c250) > 140 && qss::cR(c250) < 160);
+
+    an.tick(nodes, 250);
+    chk(io, "kf-t500-opacity", near(qss::fnum(clegstyle::get(b, "opacity", ""), 0.0), 0.4));
+    StyleTransform t2 = qss::transform(clegstyle::get(b, "transform", ""));
+    chk(io, "kf-t500-transform", t2.dx == 20 && t2.dy == 10 && t2.sxn == 1200);
+    chk(io, "kf-t500-color", qss::cR(qss::color(clegstyle::get(b, "background-color", ""))) == 255);
+
+    an.tick(nodes, 250);
+    chk(io, "kf-t750-opacity", near(qss::fnum(clegstyle::get(b, "opacity", ""), 0.0), 0.7));
+    an.tick(nodes, 250);
+    chk(io, "kf-t1000-opacity", near(qss::fnum(clegstyle::get(b, "opacity", ""), 0.0), 1.0));
+    StyleTransform t4 = qss::transform(clegstyle::get(b, "transform", ""));
+    chk(io, "kf-t1000-transform", t4.dx == 0 && t4.sxn == 1000);
+
+    // ---- transition：属性变化补间 ----
+    List<ClegNode> n2 = List::new();
+    ClegLabel l = ClegLabel::new();
+    l.getStyle()["opacity"] = "1";
+    l.getStyle()["transition"] = "opacity 500ms linear";
+    n2.append(l);
+    an.tick(n2, 16);
+    chk(io, "tr-init", clegstyle::get(l, "opacity", "") == "1");
+    l.getStyle()["opacity"] = "0";
+    an.tick(n2, 250);
+    chk(io, "tr-mid", near(qss::fnum(clegstyle::get(l, "opacity", ""), 1.0), 0.5));
+    an.tick(n2, 250);
+    chk(io, "tr-end", near(qss::fnum(clegstyle::get(l, "opacity", ""), 1.0), 0.0));
+    chk(io, "tr-end-override-cleared", l.getStyle().get("opacity") == "0");
+
+    // 颜色 transition（含缓动端点）
+    ClegLabel l2 = ClegLabel::new();
+    l2.getStyle()["background-color"] = "0,0,0";
+    l2.getStyle()["transition"] = "background-color 400ms linear";
+    n2.append(l2);
+    an.tick(n2, 16);
+    l2.getStyle()["background-color"] = "200,100,50";
+    an.tick(n2, 200);
+    int mc = qss::color(clegstyle::get(l2, "background-color", ""));
+    chk(io, "tr-color-mid", qss::cR(mc) > 90 && qss::cR(mc) < 110 && qss::cG(mc) > 40 && qss::cG(mc) < 60);
+
+    // transform transition
+    ClegLabel l3 = ClegLabel::new();
+    l3.getStyle()["transform"] = "translate(0,0) scale(1)";
+    l3.getStyle()["transition"] = "transform 400ms linear";
+    n2.append(l3);
+    an.tick(n2, 16);
+    l3.getStyle()["transform"] = "translate(40,20) scale(2)";
+    an.tick(n2, 200);
+    StyleTransform t3 = qss::transform(clegstyle::get(l3, "transform", ""));
+    chk(io, "tr-transform-mid", t3.dx == 20 && t3.dy == 10 && t3.sxn == 1500);
+
+    // 无动画/无 transition 节点不崩
+    ClegLabel plain = ClegLabel::new();
+    n2.append(plain);
+    an.tick(n2, 16);
+    chk(io, "plain-node", true);
+
+    // iteration / direction：alternate infinite
+    List<ClegNode> n3 = List::new();
+    ClegLabel alt = ClegLabel::new();
+    alt.getStyle()["animation"] = "pulse 1000ms linear 0ms infinite alternate both";
+    n3.append(alt);
+    an.tick(n3, 1500);
+    // el=1500 → iters=1.5 → idx=1 (alternate) → frac=0.5 → t=0.5
+    chk(io, "alt-mid", near(qss::fnum(clegstyle::get(alt, "opacity", ""), 0.0), 0.4));
+
+    // paused
+    List<ClegNode> n4 = List::new();
+    ClegLabel pz = ClegLabel::new();
+    pz.getStyle()["animation"] = "pulse 1000ms linear 0ms 1 normal both";
+    pz.getStyle()["animation-play-state"] = "paused";
+    n4.append(pz);
+    an.tick(n4, 500);
+    an.tick(n4, 500);
+    chk(io, "paused", near(qss::fnum(clegstyle::get(pz, "opacity", ""), 0.0), 1.0));
+
+    // ---- 展开键：animation-name/-duration/-timing-function 与 transition-* ----
+    List<ClegNode> n5 = List::new();
+    ClegLabel ex1 = ClegLabel::new();
+    ex1.getStyle()["animation-name"] = "pulse";
+    ex1.getStyle()["animation-duration"] = "1s";
+    ex1.getStyle()["animation-timing-function"] = "linear";
+    n5.append(ex1);
+    an.tick(n5, 500);
+    chk(io, "anim-expanded-keys", near(qss::fnum(clegstyle::get(ex1, "opacity", ""), 0.0), 0.4));
+
+    List<ClegNode> n6 = List::new();
+    ClegLabel ex2 = ClegLabel::new();
+    ex2.getStyle()["opacity"] = "0";
+    ex2.getStyle()["transition-property"] = "opacity";
+    ex2.getStyle()["transition-duration"] = "400ms";
+    ex2.getStyle()["transition-timing-function"] = "linear";
+    ex2.getStyle()["transition-delay"] = "0ms";
+    n6.append(ex2);
+    an.tick(n6, 16);
+    ex2.getStyle()["opacity"] = "1";
+    an.tick(n6, 200);
+    chk(io, "transition-expanded-keys", near(qss::fnum(clegstyle::get(ex2, "opacity", ""), 0.0), 0.5));
+
+    // ---- 关键帧数字值（无引号）+ steps 缓动 ----
+    List<ClegNode> n7 = List::new();
+    ClegLabel ex3 = ClegLabel::new();
+    an.define("numkf", "{\"0\":{\"opacity\":1},\"0.5\":{\"opacity\":0},\"1\":{\"opacity\":1}}");
+    ex3.getStyle()["animation"] = "numkf 1000ms steps(2) 0ms 1 normal both";
+    n7.append(ex3);
+    an.tick(n7, 300);
+    chk(io, "kf-numeric-values-steps", near(qss::fnum(clegstyle::get(ex3, "opacity", ""), -1.0), 0.5));
+}

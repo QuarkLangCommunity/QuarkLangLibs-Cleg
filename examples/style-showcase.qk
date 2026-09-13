@@ -1,0 +1,135 @@
+// cleg Style v2 展示：盒模型 / 四边边框 / 圆角 / 渐变 / 阴影 / 透明度 / 文本对齐与装饰 / 状态覆盖 / 选择器块
+// 运行：examples/run.sh（需要 cleg.qk + json.qk + libclegrt.so 同目录）→ 产出 style-showcase.png
+import "cleg";
+
+program main;
+
+fn mkFrame(int x, int y, int w, int h, String style) ClegFrame {
+    ClegFrame f = ClegFrame::new();
+    f.getStyle()["pos"] = x.toString() + "," + y.toString();
+    f.w = w;
+    f.h = h;
+    f.setStyle(style);
+    return f;
+}
+fn mkLabel(int x, int y, int w, int h, String style) ClegLabel {
+    ClegLabel l = ClegLabel::new();
+    l.getStyle()["pos"] = x.toString() + "," + y.toString();
+    l.w = w;
+    l.h = h;
+    l.setStyle(style);
+    return l;
+}
+fn mkButton(int x, int y, int w, int h, String style) ClegButton {
+    ClegButton b = ClegButton::new();
+    b.getStyle()["pos"] = x.toString() + "," + y.toString();
+    b.w = w;
+    b.h = h;
+    b.setStyle(style);
+    return b;
+}
+fn mkCheck(int x, int y, String text, bool on) ClegCheckBox {
+    ClegCheckBox c = ClegCheckBox::new();
+    c.getStyle()["pos"] = x.toString() + "," + y.toString();
+    c.w = 200;
+    c.h = 28;
+    c.getStyle()["text"] = text;
+    c.setChecked(on);
+    c.setStyle(`{"font-size":"12","color":"#e6edf7","background-color::indicator":"#2b3a55","color::indicator":"#34d3eb","border-radius::indicator":"4"}`);
+    return c;
+}
+fn mkRadio(int x, int y, String text, bool on) ClegRadioButton {
+    ClegRadioButton r = ClegRadioButton::new();
+    r.getStyle()["pos"] = x.toString() + "," + y.toString();
+    r.w = 200;
+    r.h = 28;
+    r.getStyle()["text"] = text;
+    r.setChecked(on);
+    r.setStyle(`{"font-size":"12","color":"#e6edf7","background-color::indicator":"#2b3a55","color::indicator":"#ffc371"}`);
+    return r;
+}
+fn mkBar(int x, int y, int w, int h, int value, String style) ClegProgressBar {
+    ClegProgressBar p = ClegProgressBar::new();
+    p.getStyle()["pos"] = x.toString() + "," + y.toString();
+    p.w = w;
+    p.h = h;
+    p.setValue(value);
+    p.setStyle(style);
+    return p;
+}
+
+fn main(IOStream io) {
+    cleg::init(960, 640);
+    clegrt.cleg_clear(12, 16, 26);
+    List<ClegNode> nodes = List::new();
+
+    // ---------- 标题 ----------
+    nodes.append(mkLabel(24, 14, 900, 24, `{"text":"cleg Style v2 - box model / four-side border / radius / gradient / shadow / opacity / text / state / selector","font-size":"16","color":"#34d3eb"}`));
+
+    // ---------- §1 盒模型（margin + border + padding -> contentRect）+ §4 文本对齐 ----------
+    nodes.append(mkFrame(24, 50, 210, 118, `{"margin":"6","padding":"10","border-width":"4","border-color":"#34d3eb","border-radius":"8","background-color":"#1d2a44","text":"box model","color":"#e6edf7","font-size":"12","text-align":"left","text-valign":"top"}`));
+    nodes.append(mkLabel(44, 72, 170, 86, `{"text":"contentRect","background-color":"#2b3a55","color":"#9fb3c8","font-size":"11","text-align":"center","text-valign":"middle","border-radius":"4"}`));
+
+    // ---------- §1 四边边框（四边宽度 + 四边颜色）----------
+    nodes.append(mkFrame(260, 50, 200, 118, `{"text":"four-side border","border-width":"2,6,12,18","border-top-color":"#ff5f6d","border-right-color":"#ffc371","border-bottom-color":"#34d3eb","border-left-color":"#a06bff","border-radius":"6","background-color":"#141c2e","color":"#e6edf7","font-size":"12","text-align":"center","text-valign":"middle"}`));
+
+    // ---------- §1 圆角序列 0/8/24/48 ----------
+    nodes.append(mkFrame(490, 50, 64, 64, `{"background-gradient":"linear(180,#ff5f6d,0,#ffc371,100)","border-radius":"0"}`));
+    nodes.append(mkFrame(562, 50, 64, 64, `{"background-gradient":"linear(180,#ff5f6d,0,#ffc371,100)","border-radius":"8"}`));
+    nodes.append(mkFrame(634, 50, 64, 64, `{"background-gradient":"linear(180,#ff5f6d,0,#ffc371,100)","border-radius":"24"}`));
+    nodes.append(mkFrame(706, 50, 64, 64, `{"background-gradient":"linear(180,#ff5f6d,0,#ffc371,100)","border-radius":"48","box-shadow":"4 6 10 2 #000000a0"}`));
+    nodes.append(mkLabel(490, 122, 280, 20, `{"text":"border-radius 0 / 8 / 24 / 48 (+box-shadow)","font-size":"11","color":"#9fb3c8","text-align":"center","text-valign":"middle"}`));
+
+    // ---------- §2 渐变 / §3 阴影 / §2 opacity ----------
+    nodes.append(mkFrame(24, 186, 220, 92, `{"background-gradient":"linear(90,#34d3eb,0,#7a4fd0,100)","border-radius":"10","text":"linear gradient","color":"#ffffff","font-size":"12","text-align":"center","text-valign":"middle"}`));
+    nodes.append(mkFrame(258, 186, 140, 92, `{"background-gradient":"radial(50,50,55,#ffc371,#7a2f4f)","border-radius":"10","text":"radial","color":"#ffffff","font-size":"12","text-align":"center","text-valign":"middle"}`));
+    nodes.append(mkFrame(412, 186, 170, 92, `{"background-color":"#1d2a44","box-shadow":"8 10 16 2 #000000c0","border-radius":"10","text":"box-shadow","color":"#e6edf7","font-size":"12","text-align":"center","text-valign":"middle"}`));
+    nodes.append(mkFrame(596, 186, 170, 92, `{"background-color":"#1d2a44","box-shadow":"0 0 18 6 #34d3eb60 inset","border-radius":"10","text":"inset shadow","color":"#34d3eb","font-size":"12","text-align":"center","text-valign":"middle"}`));
+    nodes.append(mkFrame(780, 186, 44, 44, `{"background-color":"#34d3eb","border-radius":"6","opacity":"1"}`));
+    nodes.append(mkFrame(834, 186, 44, 44, `{"background-color":"#34d3eb","border-radius":"6","opacity":"0.5"}`));
+    nodes.append(mkFrame(888, 186, 44, 44, `{"background-color":"#34d3eb","border-radius":"6","opacity":"0.2"}`));
+    nodes.append(mkLabel(780, 234, 152, 20, `{"text":"opacity 1 / .5 / .2","font-size":"11","color":"#9fb3c8","text-align":"center","text-valign":"middle"}`));
+
+    // ---------- §4 文本对齐 / 装饰 / 省略号 ----------
+    nodes.append(mkLabel(24, 300, 200, 44, `{"text":"align left","background-color":"#1d2a44","border-width":"1","border-color":"#2b3a55","color":"#e6edf7","font-size":"13","text-align":"left","text-valign":"middle","padding":"8"}`));
+    nodes.append(mkLabel(232, 300, 200, 44, `{"text":"align center","background-color":"#1d2a44","border-width":"1","border-color":"#2b3a55","color":"#e6edf7","font-size":"13","text-align":"center","text-valign":"middle","padding":"8"}`));
+    nodes.append(mkLabel(440, 300, 200, 44, `{"text":"align right","background-color":"#1d2a44","border-width":"1","border-color":"#2b3a55","color":"#e6edf7","font-size":"13","text-align":"right","text-valign":"middle","padding":"8"}`));
+    nodes.append(mkLabel(648, 300, 176, 44, `{"text":"underline","background-color":"#1d2a44","color":"#34d3eb","font-size":"13","text-align":"center","text-valign":"middle","text-decoration":"underline","padding":"8"}`));
+    nodes.append(mkLabel(24, 350, 200, 28, `{"text":"line-through","color":"#ff5f6d","font-size":"13","text-align":"center","text-valign":"middle","text-decoration":"line-through"}`));
+    nodes.append(mkLabel(232, 350, 200, 28, `{"text":"this text is far too long for the box","color":"#ffc371","font-size":"13","text-align":"left","text-valign":"middle","text-overflow":"ellipsis"}`));
+    nodes.append(mkLabel(440, 350, 384, 28, `{"text":"letter spacing 3px","color":"#a06bff","font-size":"13","letter-spacing":"3","text-align":"left","text-valign":"middle"}`));
+
+    // ---------- §6 状态覆盖（hover / pressed / disabled / checked）----------
+    ClegButton bNormal = mkButton(24, 396, 130, 40, `{"text":"normal","background-color":"#2b3a55","color":"#e6edf7","font-size":"12"}`);
+    nodes.append(bNormal);
+    ClegButton bHover = mkButton(164, 396, 130, 40, `{"text":"hover","background-color":"#2b3a55","background-color:hover":"#34d3eb","color":"#e6edf7","color:hover":"#0b1622","font-size":"12","border-radius":"6"}`);
+    cleg::setState(bHover, "hover", true);
+    nodes.append(bHover);
+    ClegButton bPress = mkButton(304, 396, 130, 40, `{"text":"pressed","background-color":"#2b3a55","background-color:pressed":"#ff5f6d","color":"#e6edf7","font-size":"12","border-radius":"6"}`);
+    cleg::setState(bPress, "pressed", true);
+    nodes.append(bPress);
+    ClegButton bDis = mkButton(444, 396, 130, 40, `{"text":"disabled","background-color":"#2b3a55","background-color:disabled":"#1a2231","color":"#e6edf7","color:disabled":"#5a6a80","font-size":"12","border-radius":"6","enabled":"false"}`);
+    nodes.append(bDis);
+    nodes.append(mkCheck(596, 400, "checked", true));
+    nodes.append(mkRadio(596, 428, "checked", true));
+    nodes.append(mkBar(24, 452, 260, 24, 65, `{"background-color":"#101828","border-width":"1","border-color":"#2b3a55","border-radius":"12","background-color::chunk":"#34d3eb","border-radius::chunk":"10","color":"#0b1622","font-size":"11","text":"65%"}`));
+    nodes.append(mkBar(24, 484, 260, 24, 80, `{"background-color":"#101828","border-width":"1","border-color":"#2b3a55","border-radius":"12","background-gradient::chunk":"linear(90,#ff5f6d,0,#ffc371,100)","border-radius::chunk":"10","color":"#0b1622","font-size":"11","text":"chunk gradient 80%"}`));
+
+    // ---------- 选择器块（* / Type / Type#id / Type:hover）----------
+    ClegButton sType = mkButton(320, 452, 130, 40, `{"font-size":"12","color":"#e6edf7"}`);
+    sType.setStyle(`{"*":{"background-color":"#243044"},"ClegButton":{"background-color":"#2f6f4f","border-radius":"6"},"ClegButton:hover":{"background-color":"#ffb020"}}`);
+    nodes.append(sType);
+    ClegButton sId = mkButton(460, 452, 130, 40, `{"font-size":"12","color":"#e6edf7"}`);
+    sId.getStyle()["object-name"] = "ok";
+    sId.setStyle(`{"*":{"background-color":"#243044"},"ClegButton":{"background-color":"#2f6f4f"},"ClegButton#ok":{"background-color":"#7a4fd0","border-radius":"6"}}`);
+    nodes.append(sId);
+    ClegButton sHover = mkButton(600, 452, 130, 40, `{"font-size":"12","color":"#0b1622"}`);
+    sHover.setStyle(`{"ClegButton":{"background-color":"#2f6f4f"},"ClegButton:hover":{"background-color":"#ffb020","border-radius":"6"}}`);
+    cleg::setState(sHover, "hover", true);
+    nodes.append(sHover);
+    nodes.append(mkLabel(320, 496, 410, 40, `{"text":"selector blocks: * / ClegButton / ClegButton#ok / ClegButton:hover","font-size":"11","color":"#9fb3c8","text-align":"left","text-valign":"middle"}`));
+
+    tick(nodes);
+    cleg::cleg_frame("style-showcase.png");
+    io.println("style-showcase.png written (960x640)");
+}

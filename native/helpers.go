@@ -23,6 +23,7 @@ func loadFontFile(path string, px int) (*ttfFont, error) {
 	if err != nil {
 		return nil, err
 	}
+	f.path = path
 	ttfCache[key] = f
 	return f, nil
 }

@@ -12,8 +12,6 @@ import (
 	"image/color"
 	"image/png"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
 // framebuffer 是 cleg 的渲染目标（预分配，重复使用）。
@@ -21,6 +19,17 @@ type framebuffer struct {
 	buf []uint32
 	w   int
 	h   int
+
+	// 裁剪栈（v2，cleg_clip_push/cleg_clip_pop）：当前裁剪区为半开区间
+	// [clipX0,clipX1) × [clipY0,clipY1)，所有绘制路径（rect/roundrect/text/image/原语）
+	// 均受其约束；fillPixels（cleg_clear）是整帧重置，不受裁剪约束。
+	clipX0, clipY0, clipX1, clipY1 int
+	clipStack                      [][4]int
+
+	// 当前变换（v2，cleg_transform）：device = p * scale + translate（有理数缩放，无浮点 ABI）。
+	xfDX, xfDY     int
+	xfNumX, xfDenX int
+	xfNumY, xfDenY int
 }
 
 func (fb *framebuffer) reset(w, h int) {
@@ -30,33 +39,38 @@ func (fb *framebuffer) reset(w, h int) {
 	fb.buf = fb.buf[:w*h]
 	fb.w = w
 	fb.h = h
+	fb.clipX0, fb.clipY0, fb.clipX1, fb.clipY1 = 0, 0, w, h
+	fb.clipStack = fb.clipStack[:0]
+	fb.xfReset()
 }
 
 // fillPixels 全屏填充（u32 写，配合 memset 级带宽，4K ~2ms@60fps 级）。
+// 语义：整帧重置，刻意不受裁剪区/变换影响（cleg_clear 用于帧首清屏）。
 func (fb *framebuffer) fillPixels(c uint32) {
 	for i := range fb.buf {
 		fb.buf[i] = c
 	}
 }
 
-// fillRect 矩形填充：全坐标裁剪 + 逐行 u32 写（无分配）。
+// fillRect 矩形填充：全坐标裁剪 + 当前裁剪区约束 + 逐行 u32 写（无分配）。
 func (fb *framebuffer) fillRect(x, y, w, h int, c uint32) {
 	if w <= 0 || h <= 0 {
 		return
 	}
 	x0, y0 := x, y
 	x1, y1 := x+w, y+h
-	if x0 < 0 {
-		x0 = 0
+	// 裁剪区恒为帧缓冲子集（reset/clip_push 保证），因此直接以其为界。
+	if x0 < fb.clipX0 {
+		x0 = fb.clipX0
 	}
-	if y0 < 0 {
-		y0 = 0
+	if y0 < fb.clipY0 {
+		y0 = fb.clipY0
 	}
-	if x1 > fb.w {
-		x1 = fb.w
+	if x1 > fb.clipX1 {
+		x1 = fb.clipX1
 	}
-	if y1 > fb.h {
-		y1 = fb.h
+	if y1 > fb.clipY1 {
+		y1 = fb.clipY1
 	}
 	if x1 <= x0 || y1 <= y0 {
 		return
@@ -97,24 +111,9 @@ func (fb *framebuffer) fillRoundRect(x, y, w, h, radius int, c uint32) {
 	}
 }
 
-// drawGlyph 画 5x7 字形（scale 缩放；颜色直写）。
+// drawGlyph 画 5x7 字形（scale 缩放；颜色直写；受当前裁剪区约束）。
 func (fb *framebuffer) drawGlyph(x, y int, glyph uint8, scale int, c uint32) {
-	if glyph < 32 || glyph > 126 {
-		glyph = '?'
-	}
-	rows := font5x7[glyph-32]
-	if rows[0] == 0 && rows[1] == 0 { // 未初始化字形
-		return
-	}
-	for r := 0; r < 7; r++ {
-		bits := rows[r]
-		for ci := 0; ci < 5; ci++ {
-			if bits&(1<<uint(ci)) == 0 {
-				continue
-			}
-			fb.fillRect(x+ci*scale, y+r*scale, scale, scale, c)
-		}
-	}
+	fb.drawGlyphA(x, y, glyph, scale, c, 255)
 }
 
 // drawTextChain 字体回退链文本：font 链（"DejaVu Sans, Consolas, monospace"）逐个尝试 TTF；
@@ -128,19 +127,6 @@ func hasCJK(s string) bool {
 		}
 	}
 	return false
-}
-
-// cjkFontPath 扫描系统字体索引寻找 CJK 字体（文件名含 CJK/NotoSansCJK/SourceHan/WenQuanYi/MSung 等）。
-func cjkFontPath() string {
-	for _, p := range fontIndexAll() {
-		base := strings.ToLower(filepath.Base(p))
-		if strings.Contains(base, "cjk") || strings.Contains(base, "notosanscjk") ||
-			strings.Contains(base, "sourcehan") || strings.Contains(base, "wenquanyi") ||
-			strings.Contains(base, "wqy") || strings.Contains(base, "msung") || strings.Contains(base, "simhei") {
-			return p
-		}
-	}
-	return ""
 }
 
 // scaleFor 字号→5x7 位图缩放（font-size 语义近似：px/8）。

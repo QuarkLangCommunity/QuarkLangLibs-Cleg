@@ -1,0 +1,95 @@
+// Style v2 状态/选择器/盒模型/层级 冒烟测试
+import "cleg";
+
+program main;
+
+fn chk(IOStream io, String name, bool cond) void {
+    if (cond) { io.println("OK " + name); } else { io.println("FAIL " + name); }
+}
+
+fn main(IOStream io) {
+    // ---- 选择器块（CSS2 特异性）----
+    ClegButton b = ClegButton::new();
+    b.getStyle()["object-name"] = "ok";
+    b.setStyle("{\"*\": {\"color\": \"#ff0000\"}, \"ClegButton\": {\"color\": \"#00ff00\"}, \"ClegButton#ok\": {\"color\": \"#0000ff\"}, \"ClegButton:hover\": {\"color\": \"#ffff00\"}, \"ClegButton::chunk\": {\"background-color\": \"#123456\"}}");
+    chk(io, "selector-id-100", clegstyle::get(b, "color", "") == "#0000ff");
+    chk(io, "selector-pseudo", clegstyle::get(b, "color", "hover") == "#ffff00");
+    chk(io, "selector-sub", clegstyle::getSub(b, "background-color", "chunk", "") == "#123456");
+    chk(io, "selector-seq", b.getStyle().get("__selseq") == "5");
+
+    // ---- 状态后缀（多状态最具体→最宽泛）----
+    b.getStyle()["background-color"] = "10,20,30";
+    b.getStyle()["background-color:pressed"] = "1,2,3";
+    b.getStyle()["background-color:hover:pressed"] = "4,5,6";
+    chk(io, "state-both", clegstyle::get(b, "background-color", "hover:pressed") == "4,5,6");
+    chk(io, "state-wide", clegstyle::get(b, "background-color", "hover") == "10,20,30");
+    chk(io, "state-single", clegstyle::get(b, "background-color", "pressed") == "1,2,3");
+    chk(io, "state-order-free", clegstyle::get(b, "background-color", "pressed:hover") == "4,5,6");
+
+    // ---- enabled=false 派生 :disabled ----
+    ClegLabel d = ClegLabel::new();
+    d.getStyle()["enabled"] = "false";
+    d.getStyle()["color:disabled"] = "9,9,9";
+    d.getStyle()["color"] = "1,1,1";
+    chk(io, "disabled-derived", clegstyle::stateOf(d).indexOf("disabled") >= 0);
+    chk(io, "disabled-override", clegstyle::get(d, "color", clegstyle::stateOf(d)) == "9,9,9");
+    d.getStyle()["enabled"] = "true";
+    cleg::setState(d, "disabled", false);
+    chk(io, "state-bit-clear", clegstyle::get(d, "color", clegstyle::stateOf(d)) == "1,1,1");
+
+    // ---- 全局层 < 自身 ----
+    ClegButton g = ClegButton::new();
+    clegstyle::globalTo(g, "{\"color\": \"#101010\", \"font-size\": \"22\"}");
+    chk(io, "global-layer", clegstyle::get(g, "color", "") == "#101010");
+    chk(io, "global-fontsize", clegstyle::getI(g, "font-size", "", 0) == 22);
+    g.getStyle()["color"] = "#202020";
+    chk(io, "self-over-global", clegstyle::get(g, "color", "") == "#202020");
+
+    // ---- Theme 主题对象（实例化全局层；替代旧的 cleg::setGlobalStyle 文件方案）----
+    ClegLabel tg = ClegLabel::new();
+    Theme th = cleg::theme("{\"color\": \"#0a0b0c\", \"font-size\": \"18\"}");
+    cleg::applyTheme(th, tg);
+    chk(io, "theme-layer", clegstyle::get(tg, "color", "") == "#0a0b0c");
+    chk(io, "theme-getThemed", cleg::getThemed(th, tg, "font-size", "") == "18");
+    th.set("color", "#0d0e0f");
+    cleg::applyTheme(th, tg);
+    chk(io, "theme-revision", clegstyle::get(tg, "color", "") == "#0d0e0f");
+    cleg::clearTheme(tg);
+    chk(io, "theme-clear-fallback", clegstyle::getI(tg, "font-size", "", 0) == 4);
+
+    // ---- 祖先层（inherit 快照）----
+    ClegFrame p = ClegFrame::new();
+    p.getStyle()["color"] = "77,88,99";
+    p.getStyle()["background-color"] = "5,6,7";
+    ClegLabel ch = ClegLabel::new();
+    ch.getStyle()["background-color"] = "8,9,10";
+    clegstyle::inherit(ch, p);
+    chk(io, "ancestor-inherit", clegstyle::get(ch, "color", "") == "77,88,99");
+    chk(io, "self-over-ancestor", clegstyle::get(ch, "background-color", "") == "8,9,10");
+    chk(io, "ancestor-backdrop", clegstyle::get(ch, "backdrop", "") == "5,6,7");
+
+    // ---- 动画层最高优先 ----
+    ch.getStyle()["__anim~color"] = "1,2,3";
+    chk(io, "anim-top", clegstyle::get(ch, "color", "") == "1,2,3");
+
+    // ---- 盒模型 ----
+    ClegButton box = ClegButton::new();
+    box.setStyle("{\"pos\": \"0,0\", \"margin\": \"5\", \"padding\": \"4\", \"border-width\": \"2\"}");
+    box.w = 100;
+    box.h = 50;
+    Rect r = clegstyle::contentRect(box);
+    chk(io, "box-content", r.x == 11 && r.y == 11 && r.w == 78 && r.h == 28);
+    Rect br = clegstyle::borderRect(box);
+    chk(io, "box-border", br.x == 5 && br.y == 5 && br.w == 90 && br.h == 40);
+    box.setStyle("{\"margin\": \"1,2,3,4\", \"padding\": \"0\", \"border-width\": \"0\"}");
+    Rect r2 = clegstyle::contentRect(box);
+    chk(io, "box-4val", r2.x == 0 + 4 && r2.y == 0 + 1 && r2.w == 100 - 2 - 4 && r2.h == 50 - 1 - 3);
+    box.setStyle("{\"box-sizing\": \"content\", \"margin\": \"0\", \"padding\": \"4\", \"border-width\": \"2\"}");
+    Rect r3 = clegstyle::contentRect(box);
+    chk(io, "box-content-sizing", r3.w == 100 && r3.h == 50);
+    // ---- 颜色/长度解析（经 get 读回）----
+    ClegLabel col = ClegLabel::new();
+    col.getStyle()["color"] = "rgba(1,2,3,0.5)";
+    chk(io, "color-alpha-value", clegstyle::get(col, "color", "") == "rgba(1,2,3,0.5)");
+    chk(io, "color-parse", qss::cA(qss::color(clegstyle::get(col, "color", ""))) == 128);
+}
