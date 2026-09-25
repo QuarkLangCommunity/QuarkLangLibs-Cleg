@@ -21,7 +21,17 @@ jobs:
           cd /tmp/qkc-repo && go build -o /tmp/quark main.go
           git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangQkfmt.git /tmp/qkfmt-repo
           cd /tmp/qkfmt-repo && go build -o /tmp/qkfmt .
+
+          # 测试依赖的官方库（钉 commit：上游变动不影响本仓 CI）
+          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangLibs-Json.git /tmp/json-lib
+          git -C /tmp/json-lib fetch -q --depth 1 origin a4f9f41f959d2bfdd09fac287eb53cf68b3af49d && git -C /tmp/json-lib checkout -q FETCH_HEAD
+          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangLibs-Style.git /tmp/style-lib
+          git -C /tmp/style-lib fetch -q --depth 1 origin b4ea55940ce6dac70c3f1675490614df88d01240 && git -C /tmp/style-lib checkout -q FETCH_HEAD
       - name: 库测试
+        env:
+          # 测试依赖：json.qk / style.qk（CI 里没有本地兄弟目录，必须显式给路径）
+          JSON_LIB: /tmp/json-lib/json.qk
+          STYLE_LIB: /tmp/style-lib/style.qk
         run: |
           if [ -x tests/run.sh ]; then QUARK=/tmp/quark ./tests/run.sh; fi
       - name: 格式检查（提示，不阻断）
