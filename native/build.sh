@@ -18,5 +18,12 @@ if [ -n "$unformatted" ]; then
 fi
 
 go vet ./...
-go build -buildmode=c-shared -o "$out/libclegrt.so" .
-echo "built $out/libclegrt.so"
+# The suffix follows the host. Windows needs .dll because the loader probes libclegrt.dll.
+# macOS deliberately keeps .so: the runtime probes ./libclegrt.so before the bare
+# libclegrt.dylib, and dlopen ignores the suffix when it opens a Mach-O image.
+case "$(go env GOOS)" in
+  windows) ext=dll ;;
+  *) ext=so ;;
+esac
+go build -buildmode=c-shared -o "$out/libclegrt.$ext" .
+echo "built $out/libclegrt.$ext"

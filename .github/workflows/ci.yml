@@ -8,32 +8,62 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: library tests (${{ matrix.os }})
+    # Cross-platform gate. This library is not like its siblings: cleg.qk drives a native
+    # rendering backend through FFI, so "build plus its tests" means building the backend for
+    # the host and then exercising the library against it. A Linux-only runner would leave the
+    # macOS and Windows code paths — and the loader that has to find the backend on each of
+    # them — completely untested.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4（SHA 固定；dependabot 周更）
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5（SHA 固定；dependabot 周更）
         with:
           go-version: '1.26'
       - name: 取解释器与工具链
+        shell: bash
         run: |
+          set -euo pipefail
+          # Tools go outside the checkout, reached by a relative path. An absolute /tmp path is
+          # not portable: a native compiler on the Windows runner reads /tmp/... as
+          # <current drive>:\tmp\..., which is not where bash's /tmp points.
+          ext=""
+          if [ "$(go env GOOS)" = "windows" ]; then ext=".exe"; fi
+          mkdir -p ../.ci-tools
           # 钉主仓**版本 tag**（不再跟 main）：主仓变更不再连坐本仓 CI；升级时同步改这里
-          git clone --depth 1 --branch v2.0.0 https://github.com/QuarkLangCommunity/QuarkLangQkc.git /tmp/qkc-repo
-          cd /tmp/qkc-repo && go build -o /tmp/quark main.go
-          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangQkfmt.git /tmp/qkfmt-repo
-          cd /tmp/qkfmt-repo && go build -o /tmp/qkfmt .
+          git clone --depth 1 --branch v2.0.0 https://github.com/QuarkLangCommunity/QuarkLangQkc.git ../.ci-tools/qkc-repo
+          ( cd ../.ci-tools/qkc-repo && go build -o ../quark$ext main.go )
+          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangQkfmt.git ../.ci-tools/qkfmt-repo
+          ( cd ../.ci-tools/qkfmt-repo && go build -o ../qkfmt$ext . )
 
           # 测试依赖的官方库（钉 commit：上游变动不影响本仓 CI）
-          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangLibs-Json.git /tmp/json-lib
-          git -C /tmp/json-lib fetch -q --depth 1 origin a4f9f41f959d2bfdd09fac287eb53cf68b3af49d && git -C /tmp/json-lib checkout -q FETCH_HEAD
-          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangLibs-Style.git /tmp/style-lib
-          git -C /tmp/style-lib fetch -q --depth 1 origin b4ea55940ce6dac70c3f1675490614df88d01240 && git -C /tmp/style-lib checkout -q FETCH_HEAD
+          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangLibs-Json.git ../.ci-tools/json-lib
+          git -C ../.ci-tools/json-lib fetch -q --depth 1 origin a4f9f41f959d2bfdd09fac287eb53cf68b3af49d && git -C ../.ci-tools/json-lib checkout -q FETCH_HEAD
+          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangLibs-Style.git ../.ci-tools/style-lib
+          git -C ../.ci-tools/style-lib fetch -q --depth 1 origin b4ea55940ce6dac70c3f1675490614df88d01240 && git -C ../.ci-tools/style-lib checkout -q FETCH_HEAD
+          echo "CI_TOOLS_EXT=$ext" >> "$GITHUB_ENV"
+      - name: 构建 native 渲染后端
+        shell: bash
+        # c-shared is what produces the clegrt_* C ABI the library calls through FFI.
+        # On Windows this needs a C toolchain, which is the point of running it here.
+        run: ./native/build.sh
       - name: 库测试
-        env:
+        shell: bash
+        run: |
+          set -euo pipefail
+          # bash on every OS: the runner's default shell is pwsh on Windows, where this
+          # `if` would not be a shell conditional at all.
+          tools="$PWD/../.ci-tools"
+          export QUARK="$tools/quark$CI_TOOLS_EXT"
           # 测试依赖：json.qk / style.qk（CI 里没有本地兄弟目录，必须显式给路径）
-          JSON_LIB: /tmp/json-lib/json.qk
-          STYLE_LIB: /tmp/style-lib/style.qk
-        run: |
-          if [ -x tests/run.sh ]; then QUARK=/tmp/quark ./tests/run.sh; fi
+          export JSON_LIB="$tools/json-lib/json.qk"
+          export STYLE_LIB="$tools/style-lib/style.qk"
+          if [ -x tests/run.sh ]; then ./tests/run.sh; else echo "no tests/run.sh: nothing to gate on" >&2; exit 1; fi
       - name: 格式检查（提示，不阻断）
+        shell: bash
         run: |
-          /tmp/qkfmt -l $(git ls-files '*.qk' | head -50) || true
+          "$PWD/../.ci-tools/qkfmt$CI_TOOLS_EXT" -l $(git ls-files '*.qk' | head -50) || true

@@ -10,7 +10,7 @@ if [ ! -x "$QUARK" ] && ! command -v "$QUARK" >/dev/null 2>&1; then
   echo "quark 解释器不可用：QUARK=$QUARK" >&2
   exit 2
 fi
-BUILD="$(mktemp -d /tmp/clegv2-tests.XXXXXX)"
+BUILD="$(mktemp -d)"
 trap 'rm -rf "$BUILD"' EXIT
 cp "$ROOT/cleg.qk" "$BUILD/cleg.qk"
 JSON_SRC=""
@@ -31,15 +31,21 @@ if [ -z "$STYLE_SRC" ]; then
   exit 2
 fi
 cp "$STYLE_SRC" "$BUILD/style.qk"
+# The FFI loader resolves the declared `library clegrt` by probing ./libclegrt.so first on
+# Unix and libclegrt.dll on Windows, so the backend has to be present under that exact name.
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) SO_EXT=dll ;;
+  *) SO_EXT=so ;;
+esac
 SO=""
-for s in "$ROOT/bin/libclegrt.so" "$ROOT/native/clegnative"; do
+for s in "$ROOT/bin/libclegrt.$SO_EXT" "$ROOT/native/clegnative"; do
   if [ -f "$s" ]; then SO="$s"; break; fi
 done
 if [ -z "$SO" ]; then
-  echo "找不到 libclegrt.so（先构建 native/）" >&2
+  echo "找不到 libclegrt.$SO_EXT（先构建 native/）" >&2
   exit 2
 fi
-cp "$SO" "$BUILD/libclegrt.so"
+cp "$SO" "$BUILD/libclegrt.$SO_EXT"
 
 fail=0
 libout="$(cd "$BUILD" && "$QUARK" cleg.qk 2>&1)"
