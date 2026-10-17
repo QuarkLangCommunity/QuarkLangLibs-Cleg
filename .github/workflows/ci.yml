@@ -34,8 +34,10 @@ jobs:
           ext=""
           if [ "$(go env GOOS)" = "windows" ]; then ext=".exe"; fi
           mkdir -p ../.ci-tools
-          # 钉主仓**版本 tag**（不再跟 main）：主仓变更不再连坐本仓 CI；升级时同步改这里
-          git clone --depth 1 --branch v2.0.0 https://github.com/QuarkLangCommunity/QuarkLangQkc.git ../.ci-tools/qkc-repo
+          # Pin the interpreter to the commit that lifts the Windows FFI arity limit
+          # (QuarkLangQkc #119). No release tag contains it yet; the commit is immutable.
+          git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangQkc.git ../.ci-tools/qkc-repo
+          git -C ../.ci-tools/qkc-repo fetch -q --depth 1 origin 1b9481c320f51662b11c06594d2d42110edcec5c && git -C ../.ci-tools/qkc-repo checkout -q FETCH_HEAD
           ( cd ../.ci-tools/qkc-repo && go build -o ../quark$ext main.go )
           git clone --depth 1 https://github.com/QuarkLangCommunity/QuarkLangQkfmt.git ../.ci-tools/qkfmt-repo
           ( cd ../.ci-tools/qkfmt-repo && go build -o ../qkfmt$ext . )
