@@ -1,0 +1,17 @@
+# Line endings are pinned to LF.
+#
+# native/build.sh gates on `gofmt -l`, and gofmt reports every CRLF file as unformatted.
+# With `eol` unspecified, a Windows checkout converts text to CRLF (core.autocrlf is true
+# on GitHub's Windows runners), so the native build failed there on a check that passes on
+# Linux and macOS — all twelve .go files were reported at once, which is the signature of a
+# line-ending problem rather than twelve formatting mistakes. Found by the three-OS CI gate.
+*.go   text eol=lf
+*.sh   text eol=lf
+*.qk   text eol=lf
+*.md   text eol=lf
+*.h    text eol=lf
+
+# Committed build outputs are binary and must never be line-ending converted.
+*.so   binary
+*.dll  binary
+native/clegnative binary

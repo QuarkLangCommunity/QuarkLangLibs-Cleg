@@ -13,7 +13,7 @@ jobs:
       - name: 打包 .qk 与文档
         run: |
           mkdir -p dist
-          zip -r "dist/QuarkLangLibs-Cleg-${GITHUB_REF_QuarkLangLibs-Cleg}.zip" . -x '.git/*' -x 'dist/*'
+          zip -r "dist/QuarkLangLibs-Cleg-${GITHUB_REF_NAME}.zip" . -x '.git/*' -x 'dist/*'
       - uses: actions/upload-artifact@v4
         with:
           name: QuarkLangLibs-Cleg-package
